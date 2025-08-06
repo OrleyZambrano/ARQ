@@ -1,0 +1,13 @@
+{
+    "name": "propfinder-shared",
+    "version": "1.0.0",
+    "description": "Types and utilities shared between frontend and backend",
+    "main": "index.js",
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsc --watch"
+    },
+    "devDependencies": {
+        "typescript": "^5.2.2"
+    }
+}
