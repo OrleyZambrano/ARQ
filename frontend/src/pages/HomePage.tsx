@@ -1,5 +1,5 @@
-import { Link } from "react-router-dom";
-import { Search, Home, MapPin, Star } from "lucide-react";
+import { Link } from 'react-router-dom';
+import { Search, MapPin } from 'lucide-react';
 
 export function HomePage() {
   return (

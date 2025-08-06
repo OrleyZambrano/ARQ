@@ -7,7 +7,6 @@ import {
   Square,
   Car,
   ArrowLeft,
-  Calendar,
   User,
   Mail,
   Phone,

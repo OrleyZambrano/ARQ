@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { MapPin, Filter, Grid, List } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from 'react';
+import { MapPin, Grid, List } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface Property {
   id: string;
