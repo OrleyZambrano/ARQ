@@ -3,6 +3,7 @@ import { ConfigModule } from "@nestjs/config";
 import { AppController } from "./app.controller";
 import { HealthModule } from "./health/health.module";
 import { PropertiesModule } from "./properties/properties.module";
+import { SupabaseModule } from "./supabase/supabase.module";
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { PropertiesModule } from "./properties/properties.module";
     }),
 
     // Módulos de la aplicación
+    SupabaseModule,
     HealthModule,
     PropertiesModule,
   ],
