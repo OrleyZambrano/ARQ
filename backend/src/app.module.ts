@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { AppController } from "./app.controller";
 import { HealthModule } from "./health/health.module";
 import { PropertiesModule } from "./properties/properties.module";
 
@@ -15,7 +16,7 @@ import { PropertiesModule } from "./properties/properties.module";
     HealthModule,
     PropertiesModule,
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [],
 })
 export class AppModule {}
