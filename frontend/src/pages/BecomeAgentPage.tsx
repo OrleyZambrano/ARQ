@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
@@ -10,6 +10,8 @@ import {
   AlertCircle,
   CheckCircle,
   Star,
+  Clock,
+  XCircle,
 } from "lucide-react";
 
 export function BecomeAgentPage() {
@@ -24,13 +26,141 @@ export function BecomeAgentPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [agentApplication, setAgentApplication] = useState<any>(null);
+  const [checkingApplication, setCheckingApplication] = useState(true);
+
+  // Verificar si ya tiene una aplicación de agente
+  useEffect(() => {
+    const checkExistingApplication = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from("agents")
+          .select("id, approval_status, approval_notes")
+          .eq("id", user.id)
+          .single();
+
+        if (!error && data) {
+          setAgentApplication(data);
+        }
+      } catch (err) {
+        // No hay aplicación existente
+      } finally {
+        setCheckingApplication(false);
+      }
+    };
+
+    checkExistingApplication();
+  }, [user]);
 
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  if (isAgent) {
+  // Si ya es agente aprobado, redirigir al dashboard
+  if (isAgent || agentApplication?.approval_status === "approved") {
     return <Navigate to="/agent-dashboard" replace />;
+  }
+
+  // Si está cargando la verificación
+  if (checkingApplication) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Si ya tiene una aplicación pendiente, mostrar mensaje
+  if (agentApplication?.approval_status === "pending") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div className="text-center">
+            <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-yellow-100">
+              <Clock className="h-8 w-8 text-yellow-600" />
+            </div>
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+              Aplicación Pendiente
+            </h2>
+            <p className="mt-2 text-center text-sm text-gray-600">
+              Tu solicitud para ser agente está siendo revisada por un administrador.
+            </p>
+            <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-md p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <AlertCircle className="h-5 w-5 text-yellow-400" />
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-yellow-800">
+                    ¿Qué sigue?
+                  </h3>
+                  <div className="mt-2 text-sm text-yellow-700">
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>Un administrador revisará tu aplicación</li>
+                      <li>Recibirás una notificación cuando sea aprobada</li>
+                      <li>Una vez aprobada, tendrás acceso completo como agente</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => window.location.href = "/"}
+              className="mt-6 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Volver al Inicio
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Si fue rechazado, mostrar mensaje con opción de reaplicar
+  if (agentApplication?.approval_status === "rejected") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div className="text-center">
+            <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-red-100">
+              <XCircle className="h-8 w-8 text-red-600" />
+            </div>
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+              Aplicación Rechazada
+            </h2>
+            <p className="mt-2 text-center text-sm text-gray-600">
+              Tu solicitud para ser agente fue rechazada.
+            </p>
+            {agentApplication.approval_notes && (
+              <div className="mt-4 bg-red-50 border border-red-200 rounded-md p-4">
+                <p className="text-sm text-red-700">
+                  <strong>Motivo:</strong> {agentApplication.approval_notes}
+                </p>
+              </div>
+            )}
+            <div className="mt-6 space-y-3">
+              <button
+                onClick={() => {
+                  setAgentApplication(null);
+                  setError("");
+                }}
+                className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Aplicar Nuevamente
+              </button>
+              <button
+                onClick={() => window.location.href = "/"}
+                className="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Volver al Inicio
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const handleChange = (
@@ -78,10 +208,16 @@ export function BecomeAgentPage() {
       }
 
       // 2. Crear aplicación para ser agente (PENDIENTE de aprobación)
+      // Obtener el nombre completo de diferentes fuentes
+      const fullName = userProfile?.full_name || 
+                       user.user_metadata?.full_name || 
+                       user.user_metadata?.name ||
+                       user.email?.split('@')[0] ||
+                       'Usuario';
+
       const { error: agentError } = await supabase.from("agents").insert({
         id: user.id,
-        full_name:
-          userProfile?.full_name || user.user_metadata?.full_name || user.email,
+        full_name: fullName,
         email: user.email,
         phone: formData.phone,
         license_number: formData.licenseNumber || null,
