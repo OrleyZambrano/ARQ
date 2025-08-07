@@ -48,11 +48,52 @@ export function BecomeAgentPage() {
     setError("");
 
     try {
-      // 1. Actualizar role en user_profiles
+      // 1. Verificar si ya aplicó antes
+      const { data: existingApplication } = await supabase
+        .from("agents")
+        .select("id, approval_status, approval_notes")
+        .eq("id", user.id)
+        .single();
+
+      if (existingApplication) {
+        if (existingApplication.approval_status === "pending") {
+          setError("Ya tienes una aplicación pendiente de aprobación. Espera la respuesta del administrador.");
+          setLoading(false);
+          return;
+        } else if (existingApplication.approval_status === "approved") {
+          setError("Ya eres un agente aprobado.");
+          setLoading(false);
+          return;
+        } else if (existingApplication.approval_status === "rejected") {
+          setError(`Tu aplicación fue rechazada. Motivo: ${existingApplication.approval_notes || "Contacta al administrador"}`);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 2. Crear aplicación para ser agente (PENDIENTE de aprobación)
+      const { error: agentError } = await supabase
+        .from("agents")
+        .insert({
+          id: user.id,
+          license_number: formData.licenseNumber || null,
+          company_name: formData.companyName || null,
+          website_url: formData.websiteUrl || null,
+          description: formData.description || null,
+          credits: 0, // Sin créditos hasta ser aprobado
+          is_verified: false,
+          rating: 0.0,
+          total_ratings: 0,
+          approval_status: "pending", // PENDIENTE de aprobación
+          applied_at: new Date().toISOString()
+        });
+
+      if (agentError) throw agentError;
+
+      // 3. Actualizar teléfono en user_profiles (NO cambiar rol aún)
       const { error: profileError } = await supabase
         .from("user_profiles")
         .update({
-          role: "agent",
           phone: formData.phone,
           updated_at: new Date().toISOString(),
         })
@@ -60,26 +101,16 @@ export function BecomeAgentPage() {
 
       if (profileError) throw profileError;
 
-      // 2. Crear registro en agents
-      const { error: agentError } = await supabase.from("agents").insert({
-        id: user.id,
-        license_number: formData.licenseNumber || null,
-        company_name: formData.companyName || null,
-        website_url: formData.websiteUrl || null,
-        description: formData.description || null,
-        credits: 10, // Créditos iniciales
-        is_verified: false, // Pendiente de verificación
-        rating: 0.0,
-        total_ratings: 0,
-      });
-
-      if (agentError) throw agentError;
-
-      // 3. Refrescar perfil
+      // 4. Refrescar perfil
       await refreshProfile();
       setSuccess(true);
     } catch (err: any) {
-      setError(err.message || "Error al convertirse en agente");
+      if (err.code === "23505") {
+        // Duplicate key error
+        setError("Ya tienes una aplicación registrada. Contacta al administrador.");
+      } else {
+        setError(err.message || "Error al enviar aplicación");
+      }
     } finally {
       setLoading(false);
     }
@@ -90,39 +121,41 @@ export function BecomeAgentPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
-            <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-green-100">
-              <CheckCircle className="h-8 w-8 text-green-600" />
+            <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-yellow-100">
+              <CheckCircle className="h-8 w-8 text-yellow-600" />
             </div>
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              ¡Felicitaciones!
+              ¡Aplicación Enviada!
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
-              Te has convertido en agente de PropFinder
+              Tu solicitud para ser agente ha sido enviada y está pendiente de aprobación
             </p>
-            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-md p-4">
+            <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-md p-4">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <Star className="h-5 w-5 text-blue-400" />
+                  <Star className="h-5 w-5 text-yellow-400" />
                 </div>
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-blue-800">
-                    ¡Empezaste con 10 créditos!
+                  <h3 className="text-sm font-medium text-yellow-800">
+                    ¿Qué sigue?
                   </h3>
-                  <div className="mt-2 text-sm text-blue-700">
-                    <p>
-                      Usa tus créditos para publicar propiedades y destacar tus
-                      anuncios.
-                    </p>
+                  <div className="mt-2 text-sm text-yellow-700">
+                    <ul className="list-disc space-y-1 ml-5">
+                      <li>Un administrador revisará tu aplicación</li>
+                      <li>Recibirás una notificación cuando sea aprobada</li>
+                      <li>Una vez aprobada, tendrás acceso completo como agente</li>
+                      <li>Incluirá 10 créditos iniciales para publicar propiedades</li>
+                    </ul>
                   </div>
                 </div>
               </div>
             </div>
             <div className="mt-6">
               <button
-                onClick={() => (window.location.href = "/agent-dashboard")}
+                onClick={() => (window.location.href = "/")}
                 className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                Ir al Panel de Agente
+                Volver al Inicio
               </button>
             </div>
           </div>
