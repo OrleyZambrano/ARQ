@@ -36,7 +36,7 @@ on:
 
 env:
   PROJECT_ID: "arq-final-468222"
-  REGION: "europe-west1" 
+  REGION: "europe-west1"
   SERVICE: "propfinder-app"
   WORKLOAD_IDENTITY_PROVIDER: "projects/559450792153/locations/global/workloadIdentityPools/github-actions/providers/github"
 
@@ -61,6 +61,7 @@ jobs:
         uses: "google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2" # google-github-actions/auth@v2
         with:
           workload_identity_provider: "${{ env.WORKLOAD_IDENTITY_PROVIDER }}"
+          service_account: "github-actions-sa@arq-final-468222.iam.gserviceaccount.com"
 
       # BEGIN - Docker auth and build
       #
@@ -74,10 +75,11 @@ jobs:
 
       - name: "Build and Push Container"
         run: |-
-          DOCKER_TAG="$${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}:${{ github.sha }}"
+          DOCKER_TAG="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}:${{ github.sha }}"
           docker build --tag "${DOCKER_TAG}" .
           docker push "${DOCKER_TAG}"
       - name: "Deploy to Cloud Run"
+        id: "deploy"
         # END - Docker auth and build
 
         uses: "google-github-actions/deploy-cloudrun@33553064113a37d688aa6937bacbdc481580be17" # google-github-actions/deploy-cloudrun@v2
