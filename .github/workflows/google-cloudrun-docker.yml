@@ -66,16 +66,13 @@ jobs:
       # BEGIN - Docker auth and build
       #
       # If you already have a container image, you can omit these steps.
-      - name: "Docker Auth"
-        uses: "docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567" # docker/login-action@v3
-        with:
-          username: "oauth2accesstoken"
-          password: "${{ steps.auth.outputs.auth_token }}"
-          registry: "gcr.io"
+      - name: "Configure Docker to use gcloud as a credential helper"
+        run: |-
+          gcloud auth configure-docker europe-west1-docker.pkg.dev --quiet
 
       - name: "Build and Push Container"
         run: |-
-          DOCKER_TAG="gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE }}:${{ github.sha }}"
+          DOCKER_TAG="europe-west1-docker.pkg.dev/${{ env.PROJECT_ID }}/propfinder-app/${{ env.SERVICE }}:${{ github.sha }}"
           docker build --tag "${DOCKER_TAG}" .
           docker push "${DOCKER_TAG}"
       - name: "Deploy to Cloud Run"
@@ -88,7 +85,7 @@ jobs:
           region: "${{ env.REGION }}"
           # NOTE: If using a pre-built image, update the image name below:
 
-          image: "gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE }}:${{ github.sha }}"
+          image: "europe-west1-docker.pkg.dev/${{ env.PROJECT_ID }}/propfinder-app/${{ env.SERVICE }}:${{ github.sha }}"
       # If required, use the Cloud Run URL output in later steps
       - name: "Show output"
         run: |2-
