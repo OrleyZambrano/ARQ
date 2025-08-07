@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { MapPin, Grid, List } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import GeospatialSearch from "../components/GeospatialSearch";
+import { useGeospatialSearch } from "../hooks/useGeospatialSearch";
 
 interface Property {
   id: string;
@@ -32,12 +34,14 @@ interface Property {
   views_count: number;
   created_at: string;
   updated_at: string;
+  distance?: number; // Distancia en búsquedas geoespaciales
 }
 
 export function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [searchMode, setSearchMode] = useState<"traditional" | "geospatial">("traditional");
   const [filters, setFilters] = useState({
     property_type: "",
     transaction_type: "",
@@ -46,6 +50,21 @@ export function PropertiesPage() {
     max_price: "",
     bedrooms: "",
   });
+
+  // Hook para búsqueda geoespacial
+  const {
+    properties: geospatialProperties,
+    loading: geospatialLoading,
+    error: geospatialError,
+    totalFound: geospatialTotal,
+    searchProperties: performGeospatialSearch,
+    clearSearch: clearGeospatialSearch
+  } = useGeospatialSearch();
+
+  // Determinar qué propiedades mostrar
+  const displayProperties = searchMode === "geospatial" ? geospatialProperties : properties;
+  const isLoading = searchMode === "geospatial" ? geospatialLoading : loading;
+  const totalProperties = searchMode === "geospatial" ? geospatialTotal : properties.length;
 
   useEffect(() => {
     fetchProperties();
@@ -95,6 +114,32 @@ export function PropertiesPage() {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
+  // Manejar búsqueda geoespacial
+  const handleGeospatialSearch = async (latitude: number, longitude: number, radius: number, _address: string) => {
+    setSearchMode("geospatial");
+    
+    const geospatialFilters = {
+      latitude,
+      longitude,
+      radius,
+      property_type: filters.property_type || undefined,
+      transaction_type: filters.transaction_type || undefined,
+      min_price: filters.min_price ? parseFloat(filters.min_price) : undefined,
+      max_price: filters.max_price ? parseFloat(filters.max_price) : undefined,
+      bedrooms: filters.bedrooms ? parseInt(filters.bedrooms) : undefined,
+      city: filters.city || undefined,
+    };
+
+    await performGeospatialSearch(geospatialFilters);
+  };
+
+  // Limpiar búsqueda geoespacial y volver a búsqueda tradicional
+  const handleClearGeospatialSearch = () => {
+    setSearchMode("traditional");
+    clearGeospatialSearch();
+    fetchProperties(); // Recargar propiedades tradicionales
+  };
+
   const formatPrice = (price: number, transactionType: string) => {
     const formatter = new Intl.NumberFormat("es-MX", {
       style: "currency",
@@ -126,6 +171,20 @@ export function PropertiesPage() {
       {/* Header de búsqueda */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {/* Búsqueda geoespacial */}
+          <div className="mb-6">
+            <GeospatialSearch
+              onLocationSearch={handleGeospatialSearch}
+              onClearLocation={handleClearGeospatialSearch}
+              isLoading={geospatialLoading}
+            />
+            {geospatialError && (
+              <div className="mt-2 text-sm text-red-600 bg-red-50 p-2 rounded border border-red-200">
+                {geospatialError}
+              </div>
+            )}
+          </div>
+
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="flex-1 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
               <div>
@@ -261,12 +320,19 @@ export function PropertiesPage() {
       {/* Resultados */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">
-            {properties.length} propiedades encontradas
-          </h1>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {totalProperties} propiedades encontradas
+            </h1>
+            {searchMode === "geospatial" && (
+              <p className="text-sm text-gray-600 mt-1">
+                Resultados ordenados por distancia
+              </p>
+            )}
+          </div>
         </div>
 
-        {loading ? (
+        {isLoading ? (
           <div className="flex justify-center items-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
           </div>
@@ -278,7 +344,7 @@ export function PropertiesPage() {
                 : "space-y-6"
             }`}
           >
-            {properties.map((property) => (
+            {displayProperties.map((property) => (
               <div
                 key={property.id}
                 className={`card ${viewMode === "list" ? "flex" : ""}`}
@@ -319,6 +385,11 @@ export function PropertiesPage() {
                     <span className="text-sm">
                       {property.city}, {property.province}
                     </span>
+                    {searchMode === "geospatial" && property.distance && (
+                      <span className="ml-2 bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                        {property.distance.toFixed(1)} km
+                      </span>
+                    )}
                   </div>
 
                   <p
@@ -365,26 +436,39 @@ export function PropertiesPage() {
           </div>
         )}
 
-        {!loading && properties.length === 0 && (
+        {!isLoading && displayProperties.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-500 text-lg">
-              No se encontraron propiedades con los filtros seleccionados
-            </div>
-            <button
-              onClick={() =>
-                setFilters({
-                  property_type: "",
-                  transaction_type: "",
-                  city: "",
-                  min_price: "",
-                  max_price: "",
-                  bedrooms: "",
-                })
+              {searchMode === "geospatial" 
+                ? "No se encontraron propiedades en el área seleccionada"
+                : "No se encontraron propiedades con los filtros seleccionados"
               }
-              className="btn-secondary mt-4"
-            >
-              Limpiar Filtros
-            </button>
+            </div>
+            <div className="mt-4 space-x-2">
+              <button
+                onClick={() =>
+                  setFilters({
+                    property_type: "",
+                    transaction_type: "",
+                    city: "",
+                    min_price: "",
+                    max_price: "",
+                    bedrooms: "",
+                  })
+                }
+                className="btn-secondary"
+              >
+                Limpiar Filtros
+              </button>
+              {searchMode === "geospatial" && (
+                <button
+                  onClick={handleClearGeospatialSearch}
+                  className="btn-secondary"
+                >
+                  Quitar Búsqueda por Ubicación
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>

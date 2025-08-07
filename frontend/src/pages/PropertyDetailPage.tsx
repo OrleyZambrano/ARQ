@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { usePropertyTracking } from "../utils/propertyTracking";
+import PropertyMap from "../components/PropertyMap";
 import {
   MapPin,
   Bed,
@@ -13,6 +14,7 @@ import {
   Mail,
   Phone,
   Heart,
+  Navigation,
 } from "lucide-react";
 
 interface Property {
@@ -476,6 +478,69 @@ export function PropertyDetailPage() {
                     </p>
                   </div>
                 </div>
+              </div>
+
+              {/* Mapa de ubicación */}
+              <div className="bg-gray-50 rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Ubicación
+                  </h3>
+                  {property.latitude && property.longitude && (
+                    <button
+                      onClick={() => {
+                        const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${property.latitude},${property.longitude}`;
+                        window.open(googleMapsUrl, '_blank');
+                        trackAction("directions_request", {
+                          method: "google_maps",
+                          destination: `${property.latitude},${property.longitude}`
+                        });
+                      }}
+                      className="flex items-center space-x-1 text-primary-600 hover:text-primary-700 text-sm font-medium transition-colors"
+                    >
+                      <Navigation className="h-4 w-4" />
+                      <span>Cómo llegar</span>
+                    </button>
+                  )}
+                </div>
+                
+                <div className="mb-4">
+                  <div className="flex items-start space-x-2 text-gray-600">
+                    <MapPin className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm">{property.address}</p>
+                      <p className="text-sm">
+                        {property.city}
+                        {property.state ? `, ${property.state}` : ""}
+                        {property.country ? `, ${property.country}` : ""}
+                      </p>
+                      {property.postal_code && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          CP: {property.postal_code}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <PropertyMap
+                  latitude={property.latitude}
+                  longitude={property.longitude}
+                  title={property.title}
+                  address={property.address}
+                  height="400px"
+                  zoom={16}
+                  className="mt-4"
+                />
+
+                {property.latitude && property.longitude && (
+                  <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
+                    <span>
+                      Coordenadas: {property.latitude.toFixed(6)}, {property.longitude.toFixed(6)}
+                    </span>
+                    <span>Mapa interactivo - Arrastra para explorar</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

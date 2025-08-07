@@ -14,41 +14,44 @@ import { AddPropertyPage } from "./pages/AddPropertyPage";
 import { MyPropertiesPage } from "./pages/MyPropertiesPage";
 import { EditPropertyPage } from "./pages/EditPropertyPage";
 import { PaymentPlansPage } from "./pages/PaymentPlansPage";
+import AuthErrorHandler from "./components/AuthErrorHandler";
 
 function App() {
   return (
-    <AuthProvider>
-      <Router
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true,
-        }}
-      >
-        <div className="min-h-screen flex flex-col bg-gray-50">
-          <Header />
+    <AuthErrorHandler>
+      <AuthProvider>
+        <Router
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true,
+          }}
+        >
+          <div className="min-h-screen flex flex-col bg-gray-50">
+            <Header />
 
-          <main className="flex-1">
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/properties" element={<PropertiesPage />} />
-              <Route path="/properties/:id" element={<PropertyDetailPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/admin" element={<AdminPage />} />
-              <Route path="/become-agent" element={<BecomeAgentPage />} />
-              <Route path="/dashboard" element={<AgentDashboardPage />} />
-              <Route path="/agent-dashboard" element={<AgentDashboardPage />} />
-              <Route path="/add-property" element={<AddPropertyPage />} />
-              <Route path="/my-properties" element={<MyPropertiesPage />} />
-              <Route path="/edit-property/:id" element={<EditPropertyPage />} />
-              <Route path="/payment-plans" element={<PaymentPlansPage />} />
-            </Routes>
-          </main>
+            <main className="flex-1">
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/properties" element={<PropertiesPage />} />
+                <Route path="/properties/:id" element={<PropertyDetailPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/admin" element={<AdminPage />} />
+                <Route path="/become-agent" element={<BecomeAgentPage />} />
+                <Route path="/dashboard" element={<AgentDashboardPage />} />
+                <Route path="/agent-dashboard" element={<AgentDashboardPage />} />
+                <Route path="/add-property" element={<AddPropertyPage />} />
+                <Route path="/my-properties" element={<MyPropertiesPage />} />
+                <Route path="/edit-property/:id" element={<EditPropertyPage />} />
+                <Route path="/payment-plans" element={<PaymentPlansPage />} />
+              </Routes>
+            </main>
 
-          <Footer />
-        </div>
-      </Router>
-    </AuthProvider>
+            <Footer />
+          </div>
+        </Router>
+      </AuthProvider>
+    </AuthErrorHandler>
   );
 }
 

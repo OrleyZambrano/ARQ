@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
+import { clearAuthStorage, handleAuthError } from "../utils/authUtils";
 
 interface AuthContextType {
   user: User | null;
@@ -34,22 +35,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [agentProfile, setAgentProfile] = useState<any>(null);
 
   useEffect(() => {
-    // Obtener sesión inicial
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadUserProfile(session.user.id);
+    // Obtener sesión inicial con manejo de errores
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Error getting session:", error);
+          // Si hay error de refresh token, usar utilidad para limpiar
+          await handleAuthError(error, supabase);
+          setSession(null);
+          setUser(null);
+        } else {
+          setSession(session);
+          setUser(session?.user ?? null);
+          if (session?.user) {
+            loadUserProfile(session.user.id);
+          }
+        }
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        // En caso de error crítico, usar utilidad para limpiar
+        await handleAuthError(error, supabase);
+        setSession(null);
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    };
+
+    initializeAuth();
 
     // Escuchar cambios de autenticación
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session?.user?.id);
+      
+      // Si hay un error de token, usar utilidad para limpiar
+      if (event === 'TOKEN_REFRESHED' && !session) {
+        clearAuthStorage();
+      }
+      
       setSession(session);
       setUser(session?.user ?? null);
+      
       if (session?.user) {
         loadUserProfile(session.user.id);
       } else {
@@ -58,6 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsAdmin(false);
         setIsAgent(false);
       }
+      
       setLoading(false);
     });
 

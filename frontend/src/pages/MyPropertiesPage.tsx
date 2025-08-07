@@ -1,7 +1,50 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
-import { Property } from "../../shared/src/types";
+
+interface Property {
+  id: string;
+  agent_id: string;
+  title: string;
+  description?: string;
+  price: number;
+  currency: string;
+  property_type: string;
+  transaction_type: "venta" | "alquiler";
+  bedrooms?: number;
+  bathrooms?: number;
+  area_total?: number;
+  area_constructed?: number;
+  parking_spaces?: number;
+  floor_number?: number;
+  total_floors?: number;
+  year_built?: number;
+  address: string;
+  neighborhood?: string;
+  city: string;
+  province: string;
+  country: string;
+  postal_code?: string;
+  latitude?: number;
+  longitude?: number;
+  amenities: string[];
+  features: Record<string, any>;
+  images: string[];
+  virtual_tour_url?: string;
+  video_url?: string;
+  status: string;
+  is_featured: boolean;
+  is_urgent: boolean;
+  views_count: number;
+  favorites_count: number;
+  inquiries_count: number;
+  whatsapp_clicks: number;
+  phone_clicks: number;
+  published_at?: string;
+  expires_at?: string;
+  created_at: string;
+  updated_at: string;
+}
 import { Link, Navigate } from "react-router-dom";
 import {
   Eye,
