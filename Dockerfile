@@ -3,7 +3,7 @@
 FROM node:18-alpine AS backend-builder
 WORKDIR /app/backend
 COPY backend/package*.json ./
-RUN npm ci --only=production
+RUN npm ci
 
 COPY backend/ .
 RUN npm run build
@@ -33,8 +33,10 @@ COPY --from=frontend-builder /app/frontend/dist /usr/share/nginx/html
 # Copy backend
 WORKDIR /app/backend
 COPY --from=backend-builder /app/backend/dist ./dist
-COPY --from=backend-builder /app/backend/node_modules ./node_modules
-COPY --from=backend-builder /app/backend/package.json ./
+COPY --from=backend-builder /app/backend/package*.json ./
+
+# Install only production dependencies for runtime
+RUN npm ci --only=production
 
 # Create startup script
 RUN echo '#!/bin/sh' > /start.sh && \
