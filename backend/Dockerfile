@@ -1,6 +1,6 @@
 # ================================
 # DOCKERFILE OPTIMIZADO PARA GOOGLE CLOUD RUN
-# Deploy desde GitHub Actions
+# Deploy desde GitHub Actions con contexto root
 # ================================
 
 # Build stage
@@ -11,7 +11,7 @@ WORKDIR /app
 # Copiar shared types y utils (necesarios para compilar)
 COPY shared/ ./shared/
 
-# Copiar package.json del backend
+# Copiar package.json del backend  
 COPY backend/package*.json ./
 
 # Instalar dependencias incluyendo devDependencies para build
