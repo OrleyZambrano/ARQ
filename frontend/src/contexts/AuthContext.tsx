@@ -10,7 +10,9 @@ interface AuthContextType {
   signUp: (
     email: string,
     password: string,
-    fullName: string
+    fullName: string,
+    firstName: string,
+    lastName: string
   ) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
@@ -108,18 +110,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error };
   };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (email: string, password: string, fullName: string, firstName: string, lastName: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
 
     if (!error && data.user) {
-      // Crear perfil de usuario
+      // Crear perfil de usuario con nombre y apellido separados
       await supabase.from("user_profiles").insert({
         id: data.user.id,
         email: data.user.email,
         full_name: fullName,
+        first_name: firstName,
+        last_name: lastName,
         role: "buyer",
       });
     }

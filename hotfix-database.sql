@@ -59,10 +59,19 @@ CREATE TABLE IF NOT EXISTS public.user_profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email TEXT,
     full_name TEXT,
+    first_name TEXT,
+    last_name TEXT,
     role TEXT DEFAULT 'buyer' CHECK (role IN ('buyer', 'agent', 'admin')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Agregar campos first_name y last_name si no existen
+ALTER TABLE public.user_profiles 
+ADD COLUMN IF NOT EXISTS first_name TEXT;
+
+ALTER TABLE public.user_profiles 
+ADD COLUMN IF NOT EXISTS last_name TEXT;
 
 -- Agregar campos faltantes a agents si no existen
 ALTER TABLE public.agents 
@@ -81,6 +90,12 @@ ADD COLUMN IF NOT EXISTS approval_notes TEXT;
 -- AGREGAR CAMPOS PARA MOSTRAR EN LA INTERFAZ ADMIN
 ALTER TABLE public.agents 
 ADD COLUMN IF NOT EXISTS full_name TEXT;
+
+ALTER TABLE public.agents 
+ADD COLUMN IF NOT EXISTS first_name TEXT;
+
+ALTER TABLE public.agents 
+ADD COLUMN IF NOT EXISTS last_name TEXT;
 
 ALTER TABLE public.agents 
 ADD COLUMN IF NOT EXISTS email TEXT;
@@ -178,7 +193,7 @@ WHERE tablename IN ('user_profiles', 'agents')
 ORDER BY tablename, policyname;
 
 -- =====================================================
--- PASO 6: DATOS DE PRUEBA (OPCIONAL)
+-- PASO 6: DATOS DE PRUEBA Y CORRECCIONES
 -- =====================================================
 
 -- Crear un usuario admin de prueba si no existe
@@ -193,5 +208,35 @@ VALUES (
     role = 'admin',
     updated_at = NOW();
 
+-- CORREGIR APLICACIONES EXISTENTES SIN NOMBRE COMPLETO
+-- Actualizar registros de agents que no tienen full_name pero sí tienen email
+UPDATE public.agents 
+SET 
+    full_name = COALESCE(
+        (SELECT up.full_name FROM public.user_profiles up WHERE up.id = agents.id AND up.full_name IS NOT NULL AND up.full_name != ''),
+        (SELECT CONCAT(up.first_name, ' ', up.last_name) FROM public.user_profiles up WHERE up.id = agents.id AND up.first_name IS NOT NULL),
+        (SELECT u.raw_user_meta_data->>'full_name' FROM auth.users u WHERE u.id = agents.id),
+        (SELECT u.raw_user_meta_data->>'name' FROM auth.users u WHERE u.id = agents.id),
+        SPLIT_PART(agents.email, '@', 1),
+        'Usuario'
+    ),
+    first_name = COALESCE(
+        (SELECT up.first_name FROM public.user_profiles up WHERE up.id = agents.id AND up.first_name IS NOT NULL),
+        (SELECT u.raw_user_meta_data->>'first_name' FROM auth.users u WHERE u.id = agents.id),
+        SPLIT_PART(agents.email, '@', 1)
+    ),
+    last_name = COALESCE(
+        (SELECT up.last_name FROM public.user_profiles up WHERE up.id = agents.id AND up.last_name IS NOT NULL),
+        (SELECT u.raw_user_meta_data->>'last_name' FROM auth.users u WHERE u.id = agents.id),
+        ''
+    )
+WHERE (full_name IS NULL OR full_name = '') 
+  AND email IS NOT NULL;
+
+-- Actualizar registros de agents que no tienen email
+UPDATE public.agents 
+SET email = (SELECT email FROM auth.users WHERE id = agents.id)
+WHERE email IS NULL;
+
 -- Mensaje de éxito
-SELECT '✅ HOTFIX COMPLETADO - Base de datos corregida' as resultado;
+SELECT '✅ HOTFIX COMPLETADO - Base de datos corregida y aplicaciones actualizadas' as resultado;

@@ -33,7 +33,7 @@ export function BecomeAgentPage() {
   useEffect(() => {
     const checkExistingApplication = async () => {
       if (!user) return;
-      
+
       try {
         const { data, error } = await supabase
           .from("agents")
@@ -85,7 +85,8 @@ export function BecomeAgentPage() {
               Aplicación Pendiente
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
-              Tu solicitud para ser agente está siendo revisada por un administrador.
+              Tu solicitud para ser agente está siendo revisada por un
+              administrador.
             </p>
             <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-md p-4">
               <div className="flex">
@@ -100,14 +101,16 @@ export function BecomeAgentPage() {
                     <ul className="list-disc list-inside space-y-1">
                       <li>Un administrador revisará tu aplicación</li>
                       <li>Recibirás una notificación cuando sea aprobada</li>
-                      <li>Una vez aprobada, tendrás acceso completo como agente</li>
+                      <li>
+                        Una vez aprobada, tendrás acceso completo como agente
+                      </li>
                     </ul>
                   </div>
                 </div>
               </div>
             </div>
             <button
-              onClick={() => window.location.href = "/"}
+              onClick={() => (window.location.href = "/")}
               className="mt-6 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               Volver al Inicio
@@ -151,7 +154,7 @@ export function BecomeAgentPage() {
                 Aplicar Nuevamente
               </button>
               <button
-                onClick={() => window.location.href = "/"}
+                onClick={() => (window.location.href = "/")}
                 className="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 Volver al Inicio
@@ -209,15 +212,19 @@ export function BecomeAgentPage() {
 
       // 2. Crear aplicación para ser agente (PENDIENTE de aprobación)
       // Obtener el nombre completo de diferentes fuentes
-      const fullName = userProfile?.full_name || 
-                       user.user_metadata?.full_name || 
-                       user.user_metadata?.name ||
-                       user.email?.split('@')[0] ||
-                       'Usuario';
+      const fullName =
+        userProfile?.full_name ||
+        `${userProfile?.first_name || ''} ${userProfile?.last_name || ''}`.trim() ||
+        user.user_metadata?.full_name ||
+        user.user_metadata?.name ||
+        user.email?.split("@")[0] ||
+        "Usuario";
 
       const { error: agentError } = await supabase.from("agents").insert({
         id: user.id,
         full_name: fullName,
+        first_name: userProfile?.first_name || user.user_metadata?.first_name || '',
+        last_name: userProfile?.last_name || user.user_metadata?.last_name || '',
         email: user.email,
         phone: formData.phone,
         license_number: formData.licenseNumber || null,

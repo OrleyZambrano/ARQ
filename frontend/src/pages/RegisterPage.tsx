@@ -15,7 +15,8 @@ export function RegisterPage() {
     email: "",
     password: "",
     confirmPassword: "",
-    fullName: "",
+    firstName: "",
+    lastName: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -41,6 +42,12 @@ export function RegisterPage() {
     setError("");
 
     // Validaciones
+    if (!formData.firstName.trim() || !formData.lastName.trim()) {
+      setError("El nombre y apellido son obligatorios");
+      setLoading(false);
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError("Las contraseñas no coinciden");
       setLoading(false);
@@ -54,10 +61,15 @@ export function RegisterPage() {
     }
 
     try {
+      // Combinar nombre y apellido
+      const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
+      
       const { error } = await signUp(
         formData.email,
         formData.password,
-        formData.fullName
+        fullName,
+        formData.firstName.trim(),
+        formData.lastName.trim()
       );
 
       if (error) {
@@ -132,24 +144,47 @@ export function RegisterPage() {
           )}
 
           <div className="space-y-4">
-            <div>
-              <label htmlFor="fullName" className="sr-only">
-                Nombre completo
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400" />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="firstName" className="sr-only">
+                  Nombre
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="firstName"
+                    name="firstName"
+                    type="text"
+                    required
+                    className="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                    placeholder="Nombre"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                  />
                 </div>
-                <input
-                  id="fullName"
-                  name="fullName"
-                  type="text"
-                  required
-                  className="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                  placeholder="Nombre completo"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                />
+              </div>
+
+              <div>
+                <label htmlFor="lastName" className="sr-only">
+                  Apellido
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="lastName"
+                    name="lastName"
+                    type="text"
+                    required
+                    className="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                    placeholder="Apellido"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                  />
+                </div>
               </div>
             </div>
 
