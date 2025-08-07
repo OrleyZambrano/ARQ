@@ -214,7 +214,9 @@ export function BecomeAgentPage() {
       // Obtener el nombre completo de diferentes fuentes
       const fullName =
         userProfile?.full_name ||
-        `${userProfile?.first_name || ''} ${userProfile?.last_name || ''}`.trim() ||
+        `${userProfile?.first_name || ""} ${
+          userProfile?.last_name || ""
+        }`.trim() ||
         user.user_metadata?.full_name ||
         user.user_metadata?.name ||
         user.email?.split("@")[0] ||
@@ -223,8 +225,10 @@ export function BecomeAgentPage() {
       const { error: agentError } = await supabase.from("agents").insert({
         id: user.id,
         full_name: fullName,
-        first_name: userProfile?.first_name || user.user_metadata?.first_name || '',
-        last_name: userProfile?.last_name || user.user_metadata?.last_name || '',
+        first_name:
+          userProfile?.first_name || user.user_metadata?.first_name || "",
+        last_name:
+          userProfile?.last_name || user.user_metadata?.last_name || "",
         email: user.email,
         phone: formData.phone,
         license_number: formData.licenseNumber || null,

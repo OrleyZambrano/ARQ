@@ -63,7 +63,7 @@ export function RegisterPage() {
     try {
       // Combinar nombre y apellido
       const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
-      
+
       const { error } = await signUp(
         formData.email,
         formData.password,

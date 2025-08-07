@@ -171,7 +171,7 @@ ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.agents ENABLE ROW LEVEL SECURITY;
 
 -- =====================================================
--- PASO 5: VERIFICACIÓN
+-- PASO 5: VERIFICACIÓN Y DIAGNÓSTICO
 -- =====================================================
 
 -- Verificar estructura de user_profiles
@@ -192,6 +192,28 @@ FROM pg_policies
 WHERE tablename IN ('user_profiles', 'agents')
 ORDER BY tablename, policyname;
 
+-- DIAGNÓSTICO: Ver qué datos tenemos en auth.users para el email orleyzambrano30@gmail.com
+SELECT 
+    email,
+    raw_user_meta_data,
+    raw_user_meta_data->>'full_name' as meta_full_name,
+    raw_user_meta_data->>'name' as meta_name,
+    raw_user_meta_data->>'first_name' as meta_first_name,
+    raw_user_meta_data->>'last_name' as meta_last_name
+FROM auth.users 
+WHERE email = 'orleyzambrano30@gmail.com';
+
+-- DIAGNÓSTICO: Ver qué datos tenemos en user_profiles para ese usuario
+SELECT 
+    up.email,
+    up.full_name,
+    up.first_name,
+    up.last_name,
+    up.role
+FROM public.user_profiles up
+JOIN auth.users u ON u.id = up.id
+WHERE u.email = 'orleyzambrano30@gmail.com';
+
 -- =====================================================
 -- PASO 6: DATOS DE PRUEBA Y CORRECCIONES
 -- =====================================================
@@ -208,35 +230,90 @@ VALUES (
     role = 'admin',
     updated_at = NOW();
 
--- CORREGIR APLICACIONES EXISTENTES SIN NOMBRE COMPLETO
--- Actualizar registros de agents que no tienen full_name pero sí tienen email
+-- CORRECCIÓN AUTOMÁTICA Y ESCALABLE PARA TODOS LOS AGENTES
+-- Actualizar nombres usando la mejor información disponible para TODOS los agentes existentes
+
+-- PASO 1: Actualizar user_profiles que no tienen nombres completos
+UPDATE public.user_profiles 
+SET 
+    full_name = COALESCE(
+        -- Si ya tiene un nombre válido (no basado en email), mantenerlo
+        CASE WHEN full_name IS NOT NULL AND full_name != '' AND full_name NOT LIKE '%@%' THEN full_name END,
+        -- Concatenar first_name + last_name si existen
+        CASE WHEN first_name IS NOT NULL AND first_name != '' THEN CONCAT(first_name, ' ', COALESCE(last_name, '')) END,
+        -- Buscar en metadatos de auth.users
+        (SELECT u.raw_user_meta_data->>'full_name' FROM auth.users u WHERE u.id = user_profiles.id AND u.raw_user_meta_data->>'full_name' IS NOT NULL),
+        (SELECT u.raw_user_meta_data->>'name' FROM auth.users u WHERE u.id = user_profiles.id AND u.raw_user_meta_data->>'name' IS NOT NULL),
+        -- Último recurso: formatear email de manera más amigable
+        CASE 
+            WHEN email IS NOT NULL THEN 
+                INITCAP(REPLACE(SPLIT_PART(email, '@', 1), '.', ' '))
+            ELSE 'Usuario'
+        END
+    ),
+    first_name = COALESCE(
+        -- Si ya tiene first_name válido, mantenerlo
+        CASE WHEN first_name IS NOT NULL AND first_name != '' THEN first_name END,
+        -- Buscar en metadatos
+        (SELECT u.raw_user_meta_data->>'first_name' FROM auth.users u WHERE u.id = user_profiles.id AND u.raw_user_meta_data->>'first_name' IS NOT NULL),
+        -- Extraer del full_name si existe
+        (SELECT SPLIT_PART(u.raw_user_meta_data->>'full_name', ' ', 1) FROM auth.users u WHERE u.id = user_profiles.id AND u.raw_user_meta_data->>'full_name' IS NOT NULL),
+        -- Último recurso: primera parte del email
+        CASE 
+            WHEN email IS NOT NULL THEN 
+                INITCAP(SPLIT_PART(SPLIT_PART(email, '@', 1), '.', 1))
+            ELSE 'Usuario'
+        END
+    ),
+    last_name = COALESCE(
+        -- Si ya tiene last_name válido, mantenerlo
+        CASE WHEN last_name IS NOT NULL AND last_name != '' THEN last_name END,
+        -- Buscar en metadatos
+        (SELECT u.raw_user_meta_data->>'last_name' FROM auth.users u WHERE u.id = user_profiles.id AND u.raw_user_meta_data->>'last_name' IS NOT NULL),
+        -- Extraer apellido del full_name completo
+        (SELECT CASE 
+            WHEN ARRAY_LENGTH(STRING_TO_ARRAY(u.raw_user_meta_data->>'full_name', ' '), 1) > 1 
+            THEN SUBSTRING(u.raw_user_meta_data->>'full_name' FROM POSITION(' ' IN u.raw_user_meta_data->>'full_name') + 1)
+            ELSE ''
+         END FROM auth.users u WHERE u.id = user_profiles.id AND u.raw_user_meta_data->>'full_name' IS NOT NULL),
+        -- Si no hay apellido, dejar vacío
+        ''
+    ),
+    updated_at = NOW()
+WHERE id IS NOT NULL;
+
+-- PASO 2: Actualizar tabla agents con información corregida de user_profiles
 UPDATE public.agents 
 SET 
     full_name = COALESCE(
+        -- Prioridad 1: Usar el full_name actualizado de user_profiles
         (SELECT up.full_name FROM public.user_profiles up WHERE up.id = agents.id AND up.full_name IS NOT NULL AND up.full_name != ''),
-        (SELECT CONCAT(up.first_name, ' ', up.last_name) FROM public.user_profiles up WHERE up.id = agents.id AND up.first_name IS NOT NULL),
-        (SELECT u.raw_user_meta_data->>'full_name' FROM auth.users u WHERE u.id = agents.id),
-        (SELECT u.raw_user_meta_data->>'name' FROM auth.users u WHERE u.id = agents.id),
-        SPLIT_PART(agents.email, '@', 1),
-        'Usuario'
+        -- Prioridad 2: Concatenar first_name + last_name de user_profiles
+        (SELECT CONCAT(up.first_name, ' ', COALESCE(up.last_name, '')) FROM public.user_profiles up WHERE up.id = agents.id AND up.first_name IS NOT NULL),
+        -- Fallback: formatear email
+        CASE 
+            WHEN agents.email IS NOT NULL THEN 
+                INITCAP(REPLACE(SPLIT_PART(agents.email, '@', 1), '.', ' '))
+            ELSE 'Usuario Sin Nombre'
+        END
     ),
     first_name = COALESCE(
         (SELECT up.first_name FROM public.user_profiles up WHERE up.id = agents.id AND up.first_name IS NOT NULL),
-        (SELECT u.raw_user_meta_data->>'first_name' FROM auth.users u WHERE u.id = agents.id),
-        SPLIT_PART(agents.email, '@', 1)
+        CASE 
+            WHEN agents.email IS NOT NULL THEN 
+                INITCAP(SPLIT_PART(SPLIT_PART(agents.email, '@', 1), '.', 1))
+            ELSE 'Usuario'
+        END
     ),
     last_name = COALESCE(
         (SELECT up.last_name FROM public.user_profiles up WHERE up.id = agents.id AND up.last_name IS NOT NULL),
-        (SELECT u.raw_user_meta_data->>'last_name' FROM auth.users u WHERE u.id = agents.id),
         ''
+    ),
+    email = COALESCE(
+        agents.email,
+        (SELECT email FROM auth.users WHERE id = agents.id)
     )
-WHERE (full_name IS NULL OR full_name = '') 
-  AND email IS NOT NULL;
-
--- Actualizar registros de agents que no tienen email
-UPDATE public.agents 
-SET email = (SELECT email FROM auth.users WHERE id = agents.id)
-WHERE email IS NULL;
+WHERE agents.id IS NOT NULL;
 
 -- Mensaje de éxito
-SELECT '✅ HOTFIX COMPLETADO - Base de datos corregida y aplicaciones actualizadas' as resultado;
+SELECT '✅ HOTFIX COMPLETADO - Base de datos corregida automáticamente para todos los usuarios' as resultado;
