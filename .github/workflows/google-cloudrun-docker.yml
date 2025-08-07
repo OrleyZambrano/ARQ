@@ -86,6 +86,9 @@ jobs:
           # NOTE: If using a pre-built image, update the image name below:
 
           image: "europe-west1-docker.pkg.dev/${{ env.PROJECT_ID }}/propfinder-app/${{ env.SERVICE }}:${{ github.sha }}"
+          env_vars: |
+            SUPABASE_URL=https://vxmpifukfohjafrbiqvw.supabase.co
+            SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4bXBpZnVrZm9oamFmcmJpcXZ3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzgwNTA0NiwiZXhwIjoyMDY5MzgxMDQ2fQ.VIESvnVaLFiVdnKT5fB2hhmhBKv683j33iJK_BtrwBg
       # If required, use the Cloud Run URL output in later steps
       - name: "Show output"
         run: |2-
