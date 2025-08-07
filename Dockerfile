@@ -40,7 +40,7 @@ RUN npm ci --only=production
 
 # Create startup script
 RUN echo '#!/bin/sh' > /start.sh && \
-    echo 'cd /app/backend && node dist/main.js &' >> /start.sh && \
+    echo 'cd /app/backend && PORT=3000 node dist/main.js &' >> /start.sh && \
     echo 'nginx -g "daemon off;"' >> /start.sh && \
     chmod +x /start.sh
 

@@ -48,7 +48,7 @@ export class PropertiesService {
       const supabaseData = await this.supabaseService.getProperties();
       return this.transformSupabaseProperties(supabaseData);
     } catch (error) {
-      console.warn('Supabase no disponible, usando datos mock:', error.message);
+      console.warn("Supabase no disponible, usando datos mock:", error.message);
       // Fallback a datos mock si Supabase no está configurado
       return this.getMockProperties();
     }
@@ -60,7 +60,7 @@ export class PropertiesService {
       const supabaseData = await this.supabaseService.getPropertyById(id);
       return this.transformSupabaseProperty(supabaseData);
     } catch (error) {
-      console.warn('Supabase no disponible, usando datos mock:', error.message);
+      console.warn("Supabase no disponible, usando datos mock:", error.message);
       // Fallback a datos mock
       const property = this.getMockProperties().find((p) => p.id === id);
       return property || null;
@@ -80,14 +80,14 @@ export class PropertiesService {
       const properties = await this.findAll();
       return this.applyFilters(properties, filters);
     } catch (error) {
-      console.warn('Error en filtros, usando datos mock:', error.message);
+      console.warn("Error en filtros, usando datos mock:", error.message);
       return this.applyFilters(this.getMockProperties(), filters);
     }
   }
 
   // Transformar datos de Supabase al formato esperado
   private transformSupabaseProperties(supabaseData: any[]): Property[] {
-    return supabaseData.map(item => this.transformSupabaseProperty(item));
+    return supabaseData.map((item) => this.transformSupabaseProperty(item));
   }
 
   private transformSupabaseProperty(item: any): Property {
@@ -103,29 +103,34 @@ export class PropertiesService {
         city: item.city,
         state: item.state,
         country: item.country,
-        coordinates: item.latitude && item.longitude ? {
-          lat: item.latitude,
-          lng: item.longitude
-        } : undefined
+        coordinates:
+          item.latitude && item.longitude
+            ? {
+                lat: item.latitude,
+                lng: item.longitude,
+              }
+            : undefined,
       },
       features: {
         bedrooms: item.bedrooms,
         bathrooms: item.bathrooms,
         area: item.area_sqm,
-        parking_spaces: item.parking_spaces
+        parking_spaces: item.parking_spaces,
       },
       images: item.property_images?.map((img: any) => img.url) || [],
       status: item.is_active ? "active" : "inactive",
       created_at: item.created_at,
       updated_at: item.updated_at,
-      agent: item.agents ? {
-        id: item.agents.id,
-        name: item.agents.user_profiles?.full_name || 'Agente',
-        phone: item.agents.user_profiles?.phone || '',
-        email: item.agents.user_profiles?.email || '',
-        company: item.agents.company_name,
-        rating: item.agents.rating
-      } : undefined
+      agent: item.agents
+        ? {
+            id: item.agents.id,
+            name: item.agents.user_profiles?.full_name || "Agente",
+            phone: item.agents.user_profiles?.phone || "",
+            email: item.agents.user_profiles?.email || "",
+            company: item.agents.company_name,
+            rating: item.agents.rating,
+          }
+        : undefined,
     };
   }
 
@@ -207,8 +212,8 @@ export class PropertiesService {
           phone: "+57 300 123 4567",
           email: "maria@example.com",
           company: "Inmobiliaria Premier",
-          rating: 4.8
-        }
+          rating: 4.8,
+        },
       },
       {
         id: "2",
@@ -247,8 +252,8 @@ export class PropertiesService {
           phone: "+57 301 987 6543",
           email: "carlos@example.com",
           company: "Bienes Raíces Elite",
-          rating: 4.6
-        }
+          rating: 4.6,
+        },
       },
       {
         id: "3",
@@ -261,7 +266,7 @@ export class PropertiesService {
         location: {
           address: "Zona Rosa, Calle 82 #12-15",
           city: "Bogotá",
-          state: "Cundinamarca", 
+          state: "Cundinamarca",
           country: "Colombia",
           coordinates: {
             lat: 4.6667,
@@ -285,9 +290,9 @@ export class PropertiesService {
           phone: "+57 300 123 4567",
           email: "maria@example.com",
           company: "Inmobiliaria Premier",
-          rating: 4.8
-        }
-      }
+          rating: 4.8,
+        },
+      },
     ];
   }
 }
