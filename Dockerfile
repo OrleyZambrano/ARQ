@@ -16,7 +16,7 @@ RUN npm ci
 
 COPY frontend/ .
 # Build frontend with production environment
-ENV VITE_BACKEND_URL=__BACKEND_URL__
+ENV VITE_BACKEND_URL=/api
 RUN npm run build
 
 # Stage 3: Production image
@@ -40,7 +40,7 @@ RUN npm ci --only=production
 
 # Create startup script
 RUN echo '#!/bin/sh' > /start.sh && \
-    echo 'cd /app/backend && node dist/main.js &' >> /start.sh && \
+    echo 'cd /app/backend && PORT=3000 node dist/main.js &' >> /start.sh && \
     echo 'nginx -g "daemon off;"' >> /start.sh && \
     chmod +x /start.sh
 
