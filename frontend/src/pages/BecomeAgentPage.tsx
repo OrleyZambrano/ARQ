@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 export function BecomeAgentPage() {
-  const { user, isAgent, refreshProfile } = useAuth();
+  const { user, isAgent, userProfile, refreshProfile } = useAuth();
   const [formData, setFormData] = useState({
     phone: "",
     licenseNumber: "",
@@ -57,7 +57,9 @@ export function BecomeAgentPage() {
 
       if (existingApplication) {
         if (existingApplication.approval_status === "pending") {
-          setError("Ya tienes una aplicación pendiente de aprobación. Espera la respuesta del administrador.");
+          setError(
+            "Ya tienes una aplicación pendiente de aprobación. Espera la respuesta del administrador."
+          );
           setLoading(false);
           return;
         } else if (existingApplication.approval_status === "approved") {
@@ -65,28 +67,34 @@ export function BecomeAgentPage() {
           setLoading(false);
           return;
         } else if (existingApplication.approval_status === "rejected") {
-          setError(`Tu aplicación fue rechazada. Motivo: ${existingApplication.approval_notes || "Contacta al administrador"}`);
+          setError(
+            `Tu aplicación fue rechazada. Motivo: ${
+              existingApplication.approval_notes || "Contacta al administrador"
+            }`
+          );
           setLoading(false);
           return;
         }
       }
 
       // 2. Crear aplicación para ser agente (PENDIENTE de aprobación)
-      const { error: agentError } = await supabase
-        .from("agents")
-        .insert({
-          id: user.id,
-          license_number: formData.licenseNumber || null,
-          company_name: formData.companyName || null,
-          website_url: formData.websiteUrl || null,
-          description: formData.description || null,
-          credits: 0, // Sin créditos hasta ser aprobado
-          is_verified: false,
-          rating: 0.0,
-          total_ratings: 0,
-          approval_status: "pending", // PENDIENTE de aprobación
-          applied_at: new Date().toISOString()
-        });
+      const { error: agentError } = await supabase.from("agents").insert({
+        id: user.id,
+        full_name:
+          userProfile?.full_name || user.user_metadata?.full_name || user.email,
+        email: user.email,
+        phone: formData.phone,
+        license_number: formData.licenseNumber || null,
+        company_name: formData.companyName || null,
+        website_url: formData.websiteUrl || null,
+        description: formData.description || null,
+        credits: 0, // Sin créditos hasta ser aprobado
+        is_verified: false,
+        rating: 0.0,
+        total_ratings: 0,
+        approval_status: "pending", // PENDIENTE de aprobación
+        applied_at: new Date().toISOString(),
+      });
 
       if (agentError) throw agentError;
 
@@ -107,7 +115,9 @@ export function BecomeAgentPage() {
     } catch (err: any) {
       if (err.code === "23505") {
         // Duplicate key error
-        setError("Ya tienes una aplicación registrada. Contacta al administrador.");
+        setError(
+          "Ya tienes una aplicación registrada. Contacta al administrador."
+        );
       } else {
         setError(err.message || "Error al enviar aplicación");
       }
@@ -128,7 +138,8 @@ export function BecomeAgentPage() {
               ¡Aplicación Enviada!
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
-              Tu solicitud para ser agente ha sido enviada y está pendiente de aprobación
+              Tu solicitud para ser agente ha sido enviada y está pendiente de
+              aprobación
             </p>
             <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-md p-4">
               <div className="flex">
@@ -143,8 +154,12 @@ export function BecomeAgentPage() {
                     <ul className="list-disc space-y-1 ml-5">
                       <li>Un administrador revisará tu aplicación</li>
                       <li>Recibirás una notificación cuando sea aprobada</li>
-                      <li>Una vez aprobada, tendrás acceso completo como agente</li>
-                      <li>Incluirá 10 créditos iniciales para publicar propiedades</li>
+                      <li>
+                        Una vez aprobada, tendrás acceso completo como agente
+                      </li>
+                      <li>
+                        Incluirá 10 créditos iniciales para publicar propiedades
+                      </li>
                     </ul>
                   </div>
                 </div>
