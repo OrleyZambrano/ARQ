@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
-import { 
-  Users, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import { supabase } from "../lib/supabase";
+import {
+  Users,
+  Clock,
+  CheckCircle,
+  XCircle,
   Eye,
   Calendar,
   User,
   Mail,
   AlertCircle,
-  LogOut
-} from 'lucide-react';
+  LogOut,
+} from "lucide-react";
 
 interface AgentApplication {
   id: string;
@@ -23,7 +23,7 @@ interface AgentApplication {
   experience_years: number;
   specializations: string[];
   bio: string;
-  approval_status: 'pending' | 'approved' | 'rejected';
+  approval_status: "pending" | "approved" | "rejected";
   applied_at: string;
   approved_by?: string;
   approval_notes?: string;
@@ -43,17 +43,25 @@ interface Stats {
 export const AdminPage: React.FC = () => {
   const { user, signOut, isAdmin, loading } = useAuth();
   const [applications, setApplications] = useState<AgentApplication[]>([]);
-  const [stats, setStats] = useState<Stats>({ pending: 0, approved: 0, rejected: 0, total: 0 });
+  const [stats, setStats] = useState<Stats>({
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    total: 0,
+  });
   const [applicationsLoading, setApplicationsLoading] = useState(true);
-  const [selectedApplication, setSelectedApplication] = useState<AgentApplication | null>(null);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
-  const [approvalNotes, setApprovalNotes] = useState('');
+  const [selectedApplication, setSelectedApplication] =
+    useState<AgentApplication | null>(null);
+  const [filter, setFilter] = useState<
+    "all" | "pending" | "approved" | "rejected"
+  >("pending");
+  const [approvalNotes, setApprovalNotes] = useState("");
   const [processing, setProcessing] = useState<string | null>(null);
 
   // Verificar que el usuario es admin
   useEffect(() => {
     if (!loading && (!user || !isAdmin)) {
-      window.location.href = '/login';
+      window.location.href = "/login";
     }
   }, [user, isAdmin, loading]);
 
@@ -67,61 +75,70 @@ export const AdminPage: React.FC = () => {
   const loadApplications = async () => {
     try {
       setApplicationsLoading(true);
-      
+
       const { data, error } = await supabase
-        .from('agents')
-        .select(`
+        .from("agents")
+        .select(
+          `
           *,
           user_profiles!inner(email, full_name)
-        `)
-        .order('applied_at', { ascending: false });
+        `
+        )
+        .order("applied_at", { ascending: false });
 
       if (error) throw error;
 
       setApplications(data || []);
-      
+
       // Calcular estadísticas
       const newStats = {
         total: data?.length || 0,
-        pending: data?.filter(app => app.approval_status === 'pending').length || 0,
-        approved: data?.filter(app => app.approval_status === 'approved').length || 0,
-        rejected: data?.filter(app => app.approval_status === 'rejected').length || 0,
+        pending:
+          data?.filter((app) => app.approval_status === "pending").length || 0,
+        approved:
+          data?.filter((app) => app.approval_status === "approved").length || 0,
+        rejected:
+          data?.filter((app) => app.approval_status === "rejected").length || 0,
       };
       setStats(newStats);
-
     } catch (error) {
-      console.error('Error cargando aplicaciones:', error);
+      console.error("Error cargando aplicaciones:", error);
     } finally {
       setApplicationsLoading(false);
     }
   };
 
-  const handleApproval = async (applicationId: string, status: 'approved' | 'rejected') => {
+  const handleApproval = async (
+    applicationId: string,
+    status: "approved" | "rejected"
+  ) => {
     try {
       setProcessing(applicationId);
 
       const { error } = await supabase
-        .from('agents')
+        .from("agents")
         .update({
           approval_status: status,
           approved_by: user?.id,
-          approval_notes: approvalNotes || null
+          approval_notes: approvalNotes || null,
         })
-        .eq('id', applicationId);
+        .eq("id", applicationId);
 
       if (error) throw error;
 
       // Si se aprueba, también actualizar el rol del usuario a 'agent'
-      if (status === 'approved') {
-        const application = applications.find(app => app.id === applicationId);
+      if (status === "approved") {
+        const application = applications.find(
+          (app) => app.id === applicationId
+        );
         if (application) {
           const { error: profileError } = await supabase
-            .from('user_profiles')
-            .update({ role: 'agent' })
-            .eq('id', applicationId);
+            .from("user_profiles")
+            .update({ role: "agent" })
+            .eq("id", applicationId);
 
           if (profileError) {
-            console.error('Error actualizando rol:', profileError);
+            console.error("Error actualizando rol:", profileError);
           }
         }
       }
@@ -129,11 +146,10 @@ export const AdminPage: React.FC = () => {
       // Recargar aplicaciones
       await loadApplications();
       setSelectedApplication(null);
-      setApprovalNotes('');
-
+      setApprovalNotes("");
     } catch (error) {
-      console.error('Error procesando aplicación:', error);
-      alert('Error procesando la aplicación');
+      console.error("Error procesando aplicación:", error);
+      alert("Error procesando la aplicación");
     } finally {
       setProcessing(null);
     }
@@ -143,36 +159,40 @@ export const AdminPage: React.FC = () => {
     await signOut();
   };
 
-  const filteredApplications = applications.filter(app => {
-    if (filter === 'all') return true;
+  const filteredApplications = applications.filter((app) => {
+    if (filter === "all") return true;
     return app.approval_status === filter;
   });
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleDateString("es-ES", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const getStatusBadge = (status: string) => {
     const styles = {
-      pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      approved: 'bg-green-100 text-green-800 border-green-200',
-      rejected: 'bg-red-100 text-red-800 border-red-200'
+      pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
+      approved: "bg-green-100 text-green-800 border-green-200",
+      rejected: "bg-red-100 text-red-800 border-red-200",
     };
 
     const labels = {
-      pending: 'Pendiente',
-      approved: 'Aprobado',
-      rejected: 'Rechazado'
+      pending: "Pendiente",
+      approved: "Aprobado",
+      rejected: "Rechazado",
     };
 
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${styles[status as keyof typeof styles]}`}>
+      <span
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+          styles[status as keyof typeof styles]
+        }`}
+      >
         {labels[status as keyof typeof labels]}
       </span>
     );
@@ -224,7 +244,9 @@ export const AdminPage: React.FC = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.total}</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {stats.total}
+                </p>
               </div>
             </div>
           </div>
@@ -236,7 +258,9 @@ export const AdminPage: React.FC = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Pendientes</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.pending}</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {stats.pending}
+                </p>
               </div>
             </div>
           </div>
@@ -248,7 +272,9 @@ export const AdminPage: React.FC = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Aprobados</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.approved}</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {stats.approved}
+                </p>
               </div>
             </div>
           </div>
@@ -260,7 +286,9 @@ export const AdminPage: React.FC = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Rechazados</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.rejected}</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {stats.rejected}
+                </p>
               </div>
             </div>
           </div>
@@ -270,18 +298,18 @@ export const AdminPage: React.FC = () => {
         <div className="bg-white p-4 rounded-lg shadow-sm border mb-6">
           <div className="flex space-x-4">
             {[
-              { key: 'pending', label: 'Pendientes', count: stats.pending },
-              { key: 'all', label: 'Todas', count: stats.total },
-              { key: 'approved', label: 'Aprobadas', count: stats.approved },
-              { key: 'rejected', label: 'Rechazadas', count: stats.rejected }
+              { key: "pending", label: "Pendientes", count: stats.pending },
+              { key: "all", label: "Todas", count: stats.total },
+              { key: "approved", label: "Aprobadas", count: stats.approved },
+              { key: "rejected", label: "Rechazadas", count: stats.rejected },
             ].map((filterOption) => (
               <button
                 key={filterOption.key}
                 onClick={() => setFilter(filterOption.key as any)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   filter === filterOption.key
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
                 {filterOption.label} ({filterOption.count})
@@ -301,7 +329,9 @@ export const AdminPage: React.FC = () => {
           {filteredApplications.length === 0 ? (
             <div className="text-center py-12">
               <AlertCircle className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No hay aplicaciones</h3>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">
+                No hay aplicaciones
+              </h3>
               <p className="mt-1 text-sm text-gray-500">
                 No se encontraron aplicaciones con el filtro seleccionado.
               </p>
@@ -357,7 +387,10 @@ export const AdminPage: React.FC = () => {
       {selectedApplication && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+            <div
+              className="fixed inset-0 transition-opacity"
+              aria-hidden="true"
+            >
               <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
             </div>
 
@@ -377,15 +410,21 @@ export const AdminPage: React.FC = () => {
               <div className="space-y-4">
                 {/* Información personal */}
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-2">Información Personal</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">
+                    Información Personal
+                  </h4>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-gray-500">Nombre completo</p>
-                      <p className="font-medium">{selectedApplication.full_name}</p>
+                      <p className="font-medium">
+                        {selectedApplication.full_name}
+                      </p>
                     </div>
                     <div>
                       <p className="text-gray-500">Email</p>
-                      <p className="font-medium">{selectedApplication.user_profiles?.email}</p>
+                      <p className="font-medium">
+                        {selectedApplication.user_profiles?.email}
+                      </p>
                     </div>
                     <div>
                       <p className="text-gray-500">Teléfono</p>
@@ -393,22 +432,30 @@ export const AdminPage: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-gray-500">Número de licencia</p>
-                      <p className="font-medium">{selectedApplication.license_number}</p>
+                      <p className="font-medium">
+                        {selectedApplication.license_number}
+                      </p>
                     </div>
                   </div>
                 </div>
 
                 {/* Información profesional */}
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-2">Información Profesional</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">
+                    Información Profesional
+                  </h4>
                   <div className="text-sm space-y-2">
                     <div>
                       <p className="text-gray-500">Años de experiencia</p>
-                      <p className="font-medium">{selectedApplication.experience_years} años</p>
+                      <p className="font-medium">
+                        {selectedApplication.experience_years} años
+                      </p>
                     </div>
                     <div>
                       <p className="text-gray-500">Especializaciones</p>
-                      <p className="font-medium">{selectedApplication.specializations?.join(', ')}</p>
+                      <p className="font-medium">
+                        {selectedApplication.specializations?.join(", ")}
+                      </p>
                     </div>
                     <div>
                       <p className="text-gray-500">Biografía</p>
@@ -419,27 +466,35 @@ export const AdminPage: React.FC = () => {
 
                 {/* Estado y notas */}
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-2">Estado de la Aplicación</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">
+                    Estado de la Aplicación
+                  </h4>
                   <div className="flex items-center space-x-4 mb-3">
                     {getStatusBadge(selectedApplication.approval_status)}
                     <span className="text-sm text-gray-500">
                       Aplicada el {formatDate(selectedApplication.applied_at)}
                     </span>
                   </div>
-                  
+
                   {selectedApplication.approval_notes && (
                     <div className="mt-2">
-                      <p className="text-gray-500 text-sm">Notas de aprobación</p>
-                      <p className="font-medium text-sm">{selectedApplication.approval_notes}</p>
+                      <p className="text-gray-500 text-sm">
+                        Notas de aprobación
+                      </p>
+                      <p className="font-medium text-sm">
+                        {selectedApplication.approval_notes}
+                      </p>
                     </div>
                   )}
                 </div>
 
                 {/* Acciones de aprobación */}
-                {selectedApplication.approval_status === 'pending' && (
+                {selectedApplication.approval_status === "pending" && (
                   <div className="bg-blue-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-900 mb-3">Acciones de Aprobación</h4>
-                    
+                    <h4 className="font-medium text-gray-900 mb-3">
+                      Acciones de Aprobación
+                    </h4>
+
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Notas (opcional)
@@ -455,7 +510,9 @@ export const AdminPage: React.FC = () => {
 
                     <div className="flex space-x-3">
                       <button
-                        onClick={() => handleApproval(selectedApplication.id, 'approved')}
+                        onClick={() =>
+                          handleApproval(selectedApplication.id, "approved")
+                        }
                         disabled={processing === selectedApplication.id}
                         className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                       >
@@ -469,7 +526,9 @@ export const AdminPage: React.FC = () => {
                         )}
                       </button>
                       <button
-                        onClick={() => handleApproval(selectedApplication.id, 'rejected')}
+                        onClick={() =>
+                          handleApproval(selectedApplication.id, "rejected")
+                        }
                         disabled={processing === selectedApplication.id}
                         className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                       >
