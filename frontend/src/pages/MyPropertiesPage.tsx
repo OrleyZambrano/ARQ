@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
-import { Property } from "../../../shared/src/types";
+import { Property } from "../../shared/src/types";
 import { Link, Navigate } from "react-router-dom";
 import {
   Eye,

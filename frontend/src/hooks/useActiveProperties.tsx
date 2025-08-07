@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-import { Property } from "../../../shared/src/types";
+import { Property } from "../../shared/src/types";
 
 export function useActiveProperties(agentId: string | undefined) {
   const [activeProperties, setActiveProperties] = useState<Property[]>([]);

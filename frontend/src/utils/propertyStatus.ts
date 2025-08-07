@@ -68,11 +68,9 @@ export class PropertyStatusManager {
       }
 
       // Validar transiciones permitidas
-      const isValidTransition = this.validateStatusTransition(
-        property.status,
-        newStatus,
-        user.id,
-        property.agent_id
+      const isValidTransition = await this.validateStatusTransition(
+        propertyId,
+        newStatus
       );
       if (!isValidTransition.valid) {
         return { success: false, message: isValidTransition.message };
@@ -113,58 +111,84 @@ export class PropertyStatusManager {
   }
 
   /**
-   * Valida si una transición de estado es permitida
+   * Obtiene el estado actual de una propiedad
    */
-  private validateStatusTransition(
-    currentStatus: PropertyStatus,
-    newStatus: PropertyStatus,
-    userId: string,
-    agentId: string
-  ): { valid: boolean; message: string } {
-    // Verificar si es el agente propietario
-    const isOwner = userId === agentId;
+  async getCurrentStatus(propertyId: string): Promise<PropertyStatus | null> {
+    try {
+      const { data, error } = await supabase
+        .from("properties")
+        .select("status")
+        .eq("id", propertyId)
+        .single();
 
-    // Verificar si es admin (simplificado - en producción verificar rol)
-    const isAdmin = false; // TODO: Implementar verificación de admin
-
-    // Transiciones permitidas por agente propietario
-    const agentTransitions: Record<PropertyStatus, PropertyStatus[]> = {
-      draft: ["active", "under_review"],
-      active: ["paused", "sold", "draft"],
-      paused: ["active", "draft", "sold"],
-      expired: ["active", "draft"],
-      sold: ["active"], // Puede reactivar si fue error
-      under_review: [], // Solo admin puede cambiar
-      rejected: ["draft"], // Puede volver a borrador para corregir
-    };
-
-    // Transiciones permitidas por admin
-    const adminTransitions: Record<PropertyStatus, PropertyStatus[]> = {
-      draft: ["active", "under_review", "rejected"],
-      active: ["paused", "sold", "under_review", "rejected"],
-      paused: ["active", "under_review", "rejected"],
-      expired: ["active", "rejected"],
-      sold: ["active"],
-      under_review: ["active", "rejected"],
-      rejected: ["under_review", "active"],
-    };
-
-    let allowedTransitions: PropertyStatus[] = [];
-
-    if (isAdmin) {
-      allowedTransitions = adminTransitions[currentStatus] || [];
-    } else if (isOwner) {
-      allowedTransitions = agentTransitions[currentStatus] || [];
+      if (error || !data) return null;
+      return data.status as PropertyStatus;
+    } catch (err) {
+      console.error("Error getting current status:", err);
+      return null;
     }
+  }
 
-    if (!allowedTransitions.includes(newStatus)) {
-      return {
-        valid: false,
-        message: `No puedes cambiar de ${currentStatus} a ${newStatus}`,
-      };
+  /**
+   * Obtiene las transiciones válidas para una propiedad
+   */
+  async getValidTransitions(propertyId: string): Promise<PropertyStatus[]> {
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) return [];
+
+      const { data: property, error } = await supabase
+        .from("properties")
+        .select("status, agent_id")
+        .eq("id", propertyId)
+        .single();
+
+      if (error || !property) return [];
+
+      const isOwner = user.user.id === property.agent_id;
+      const currentStatus = property.status as PropertyStatus;
+
+      // Obtener transiciones válidas según el rol
+      if (isOwner) {
+        const agentTransitions: Record<PropertyStatus, PropertyStatus[]> = {
+          draft: ["active", "under_review"],
+          active: ["paused", "sold"],
+          paused: ["active"],
+          under_review: [],
+          rejected: ["draft"],
+          sold: [],
+          expired: ["draft", "active"],
+        };
+        return agentTransitions[currentStatus] || [];
+      } else {
+        // Usuario regular - solo puede ver, no cambiar estados
+        return [];
+      }
+    } catch (err) {
+      console.error("Error getting valid transitions:", err);
+      return [];
     }
+  }
 
-    return { valid: true, message: "Transición válida" };
+  /**
+   * Valida una transición de estado específica
+   */
+  async validateStatusTransition(
+    propertyId: string,
+    newStatus: PropertyStatus
+  ): Promise<{ valid: boolean; message: string }> {
+    try {
+      const validTransitions = await this.getValidTransitions(propertyId);
+      
+      if (validTransitions.includes(newStatus)) {
+        return { valid: true, message: "Transición válida" };
+      } else {
+        return { valid: false, message: "Transición no permitida" };
+      }
+    } catch (err) {
+      console.error("Error validating transition:", err);
+      return { valid: false, message: "Error validando transición" };
+    }
   }
 
   /**
@@ -197,7 +221,7 @@ export class PropertyStatusManager {
    */
   async getStatusHistory(propertyId: string): Promise<PropertyStatusHistory[]> {
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("property_status_history")
         .select(
           `
@@ -225,7 +249,7 @@ export class PropertyStatusManager {
       } = await supabase.auth.getUser();
       if (!user) return [];
 
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("properties")
         .select(
           `
