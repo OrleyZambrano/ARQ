@@ -52,6 +52,26 @@ ADD COLUMN IF NOT EXISTS approved_by UUID REFERENCES auth.users(id);
 ALTER TABLE public.agents 
 ADD COLUMN IF NOT EXISTS approval_notes TEXT;
 
+-- 11. Política para que ADMINS puedan ver TODAS las aplicaciones de agentes
+DROP POLICY IF EXISTS "Los admins pueden ver todas las aplicaciones" ON public.agents;
+CREATE POLICY "Los admins pueden ver todas las aplicaciones" ON public.agents
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.user_profiles 
+      WHERE id = auth.uid() AND role = 'admin'
+    )
+  );
+
+-- 12. Política para que ADMINS puedan actualizar el estado de aprobación
+DROP POLICY IF EXISTS "Los admins pueden aprobar/rechazar agentes" ON public.agents;
+CREATE POLICY "Los admins pueden aprobar/rechazar agentes" ON public.agents
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM public.user_profiles 
+      WHERE id = auth.uid() AND role = 'admin'
+    )
+  );
+
 -- =====================================================
 -- VERIFICAR CAMBIOS
 -- =====================================================
