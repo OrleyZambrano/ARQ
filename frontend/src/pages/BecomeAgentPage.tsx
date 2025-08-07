@@ -1,0 +1,306 @@
+import { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { Navigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { Shield, Phone, Building, FileText, AlertCircle, CheckCircle, Star } from 'lucide-react';
+
+export function BecomeAgentPage() {
+  const { user, userProfile, isAgent, refreshProfile } = useAuth();
+  const [formData, setFormData] = useState({
+    phone: '',
+    licenseNumber: '',
+    companyName: '',
+    websiteUrl: '',
+    description: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (isAgent) {
+    return <Navigate to="/agent-dashboard" replace />;
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      // 1. Actualizar role en user_profiles
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .update({ 
+          role: 'agent',
+          phone: formData.phone,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      if (profileError) throw profileError;
+
+      // 2. Crear registro en agents
+      const { error: agentError } = await supabase
+        .from('agents')
+        .insert({
+          id: user.id,
+          license_number: formData.licenseNumber || null,
+          company_name: formData.companyName || null,
+          website_url: formData.websiteUrl || null,
+          description: formData.description || null,
+          credits: 10, // Créditos iniciales
+          is_verified: false, // Pendiente de verificación
+          rating: 0.00,
+          total_ratings: 0
+        });
+
+      if (agentError) throw agentError;
+
+      // 3. Refrescar perfil
+      await refreshProfile();
+      setSuccess(true);
+
+    } catch (err: any) {
+      setError(err.message || 'Error al convertirse en agente');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div className="text-center">
+            <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-green-100">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+            </div>
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+              ¡Felicitaciones!
+            </h2>
+            <p className="mt-2 text-center text-sm text-gray-600">
+              Te has convertido en agente de PropFinder
+            </p>
+            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-md p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <Star className="h-5 w-5 text-blue-400" />
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-blue-800">
+                    ¡Empezaste con 10 créditos!
+                  </h3>
+                  <div className="mt-2 text-sm text-blue-700">
+                    <p>Usa tus créditos para publicar propiedades y destacar tus anuncios.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="mt-6">
+              <button 
+                onClick={() => window.location.href = '/agent-dashboard'}
+                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Ir al Panel de Agente
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <div className="flex items-center mb-6">
+              <div className="flex-shrink-0">
+                <Shield className="h-8 w-8 text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Convertirse en Agente
+                </h1>
+                <p className="text-sm text-gray-600">
+                  Completa tu perfil para comenzar a vender propiedades
+                </p>
+              </div>
+            </div>
+
+            {error && (
+              <div className="mb-6 rounded-md bg-red-50 p-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <AlertCircle className="h-5 w-5 text-red-400" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-red-800">Error</h3>
+                    <div className="mt-2 text-sm text-red-700">{error}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                    Teléfono *
+                  </label>
+                  <div className="mt-1 relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Phone className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="tel"
+                      name="phone"
+                      id="phone"
+                      required
+                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      placeholder="Ej: +57 300 123 4567"
+                      value={formData.phone}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="licenseNumber" className="block text-sm font-medium text-gray-700">
+                    Número de Licencia
+                  </label>
+                  <div className="mt-1 relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FileText className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      name="licenseNumber"
+                      id="licenseNumber"
+                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      placeholder="Ej: LIC-2024-001"
+                      value={formData.licenseNumber}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
+                  Empresa/Inmobiliaria
+                </label>
+                <div className="mt-1 relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Building className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    name="companyName"
+                    id="companyName"
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="Ej: Inmobiliaria XYZ"
+                    value={formData.companyName}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="websiteUrl" className="block text-sm font-medium text-gray-700">
+                  Sitio Web
+                </label>
+                <div className="mt-1">
+                  <input
+                    type="url"
+                    name="websiteUrl"
+                    id="websiteUrl"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="https://mi-sitio-web.com"
+                    value={formData.websiteUrl}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                  Descripción Profesional
+                </label>
+                <div className="mt-1">
+                  <textarea
+                    name="description"
+                    id="description"
+                    rows={4}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="Describe tu experiencia, especialización y qué te hace único como agente inmobiliario..."
+                    value={formData.description}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <Star className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-blue-800">
+                      Beneficios de ser agente
+                    </h3>
+                    <div className="mt-2 text-sm text-blue-700">
+                      <ul className="list-disc space-y-1 ml-5">
+                        <li>10 créditos iniciales gratuitos</li>
+                        <li>Publica propiedades ilimitadas</li>
+                        <li>Panel de control personalizado</li>
+                        <li>Gestión de leads y contactos</li>
+                        <li>Estadísticas de rendimiento</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => window.history.back()}
+                  className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Procesando...
+                    </div>
+                  ) : (
+                    'Convertirse en Agente'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

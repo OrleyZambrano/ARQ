@@ -1,6 +1,6 @@
-import { useAuth } from '../contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
-import { User, LogOut, Database, CheckCircle } from 'lucide-react';
+import { useAuth } from "../contexts/AuthContext";
+import { Navigate } from "react-router-dom";
+import { User, LogOut, Database, CheckCircle } from "lucide-react";
 
 export function AdminPage() {
   const { user, signOut, isAdmin, loading } = useAuth();
@@ -50,7 +50,6 @@ export function AdminPage() {
 
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          
           {/* Status de Supabase */}
           <div className="bg-white overflow-hidden shadow rounded-lg">
             <div className="p-6">
@@ -87,7 +86,7 @@ export function AdminPage() {
                   <span className="font-medium">Email:</span> {user.email}
                 </p>
                 <p className="text-sm text-gray-600">
-                  <span className="font-medium">Rol:</span> 
+                  <span className="font-medium">Rol:</span>
                   <span className="ml-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                     Administrador
                   </span>
@@ -135,8 +134,8 @@ export function AdminPage() {
               </h3>
               <div className="mt-2 text-sm text-green-700">
                 <p>
-                  Has iniciado sesión exitosamente como administrador. 
-                  La autenticación con Supabase está operativa y puedes gestionar 
+                  Has iniciado sesión exitosamente como administrador. La
+                  autenticación con Supabase está operativa y puedes gestionar
                   la plataforma PropFinder.
                 </p>
               </div>

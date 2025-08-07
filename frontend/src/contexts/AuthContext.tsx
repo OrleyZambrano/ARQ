@@ -1,14 +1,19 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { User, Session } from "@supabase/supabase-js";
+import { supabase } from "../lib/supabase";
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
+  isAgent: boolean;
+  userProfile: any;
+  agentProfile: any;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,13 +23,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isAgent, setIsAgent] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [agentProfile, setAgentProfile] = useState<any>(null);
 
   useEffect(() => {
     // Obtener sesión inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      checkAdminRole(session?.user ?? null);
+      if (session?.user) {
+        loadUserProfile(session.user.id);
+      }
       setLoading(false);
     });
 
@@ -33,7 +43,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       async (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        checkAdminRole(session?.user ?? null);
+        if (session?.user) {
+          loadUserProfile(session.user.id);
+        } else {
+          setUserProfile(null);
+          setAgentProfile(null);
+          setIsAdmin(false);
+          setIsAgent(false);
+        }
         setLoading(false);
       }
     );
@@ -41,28 +58,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const checkAdminRole = async (user: User | null) => {
-    if (!user) {
-      setIsAdmin(false);
-      return;
-    }
-
+  const loadUserProfile = async (userId: string) => {
     try {
-      // Verificar si el usuario tiene rol de admin en user_profiles
-      const { data, error } = await supabase
+      // Cargar perfil de usuario
+      const { data: profile, error: profileError } = await supabase
         .from('user_profiles')
-        .select('role')
-        .eq('id', user.id)
+        .select('*')
+        .eq('id', userId)
         .single();
 
-      if (!error && data?.role === 'admin') {
-        setIsAdmin(true);
-      } else {
-        setIsAdmin(false);
+      if (!profileError && profile) {
+        setUserProfile(profile);
+        setIsAdmin(profile.role === 'admin');
+        setIsAgent(profile.role === 'agent');
+
+        // Si es agente, cargar información adicional
+        if (profile.role === 'agent') {
+          const { data: agent, error: agentError } = await supabase
+            .from('agents')
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+          if (!agentError && agent) {
+            setAgentProfile(agent);
+          }
+        }
       }
     } catch (error) {
-      console.error('Error checking admin role:', error);
-      setIsAdmin(false);
+      console.error('Error loading user profile:', error);
+    }
+  };
+
+  const refreshProfile = async () => {
+    if (user?.id) {
+      await loadUserProfile(user.id);
     }
   };
 
@@ -74,9 +104,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error };
   };
 
+  const signUp = async (email: string, password: string, fullName: string) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (!error && data.user) {
+      // Crear perfil de usuario
+      await supabase
+        .from('user_profiles')
+        .insert({
+          id: data.user.id,
+          email: data.user.email,
+          full_name: fullName,
+          role: 'buyer'
+        });
+    }
+
+    return { error };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setIsAdmin(false);
+    setIsAgent(false);
+    setUserProfile(null);
+    setAgentProfile(null);
   };
 
   const value = {
@@ -84,21 +138,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     session,
     loading,
     signIn,
+    signUp,
     signOut,
     isAdmin,
+    isAgent,
+    userProfile,
+    agentProfile,
+    refreshProfile,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

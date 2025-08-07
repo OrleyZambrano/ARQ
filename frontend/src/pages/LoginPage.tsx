@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
-import { LogIn, User, Lock, AlertCircle } from 'lucide-react';
+import React, { useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import { Navigate } from "react-router-dom";
+import { LogIn, User, Lock, AlertCircle } from "lucide-react";
 
 export function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const { signIn, user } = useAuth();
 
@@ -19,16 +19,16 @@ export function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       const { error } = await signIn(email, password);
-      
+
       if (error) {
-        setError(error.message || 'Error al iniciar sesión');
+        setError(error.message || "Error al iniciar sesión");
       }
     } catch (err) {
-      setError('Error inesperado al iniciar sesión');
+      setError("Error inesperado al iniciar sesión");
     } finally {
       setLoading(false);
     }
@@ -60,9 +60,7 @@ export function LoginPage() {
                   <h3 className="text-sm font-medium text-red-800">
                     Error de autenticación
                   </h3>
-                  <div className="mt-2 text-sm text-red-700">
-                    {error}
-                  </div>
+                  <div className="mt-2 text-sm text-red-700">{error}</div>
                 </div>
               </div>
             </div>
@@ -126,7 +124,7 @@ export function LoginPage() {
                   Iniciando sesión...
                 </div>
               ) : (
-                'Iniciar Sesión'
+                "Iniciar Sesión"
               )}
             </button>
           </div>

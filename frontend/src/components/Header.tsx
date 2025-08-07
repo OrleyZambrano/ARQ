@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
-import { Home, Search, User, Menu, LogOut, Shield } from "lucide-react";
+import { Home, Search, User, Menu, LogOut, Shield, Building } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
 export function Header() {
-  const { user, signOut, isAdmin } = useAuth();
+  const { user, signOut, isAdmin, isAgent } = useAuth();
 
   const handleSignOut = async () => {
     await signOut();
@@ -52,7 +52,7 @@ export function Header() {
             <button className="p-2 text-gray-600 hover:text-primary-600 transition-colors">
               <Search className="h-5 w-5" />
             </button>
-            
+
             {user ? (
               <div className="flex items-center space-x-3">
                 {isAdmin && (
@@ -62,6 +62,24 @@ export function Header() {
                   >
                     <Shield className="h-4 w-4 mr-1" />
                     Admin
+                  </Link>
+                )}
+                {isAgent && (
+                  <Link
+                    to="/agent-dashboard"
+                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                  >
+                    <Building className="h-4 w-4 mr-1" />
+                    Agente
+                  </Link>
+                )}
+                {!isAgent && !isAdmin && (
+                  <Link
+                    to="/become-agent"
+                    className="inline-flex items-center px-3 py-2 border border-green-300 text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                  >
+                    <Building className="h-4 w-4 mr-1" />
+                    Ser Agente
                   </Link>
                 )}
                 <span className="text-sm text-gray-700">{user.email}</span>
@@ -74,13 +92,21 @@ export function Header() {
                 </button>
               </div>
             ) : (
-              <Link
-                to="/login"
-                className="p-2 text-gray-600 hover:text-primary-600 transition-colors"
-                title="Iniciar sesión"
-              >
-                <User className="h-5 w-5" />
-              </Link>
+              <div className="flex items-center space-x-2">
+                <Link
+                  to="/register"
+                  className="text-gray-700 hover:text-primary-600 font-medium transition-colors"
+                >
+                  Registrarse
+                </Link>
+                <Link
+                  to="/login"
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <User className="h-4 w-4 mr-1" />
+                  Iniciar Sesión
+                </Link>
+              </div>
             )}
             <button className="btn-primary hidden md:block">
               Publicar Propiedad

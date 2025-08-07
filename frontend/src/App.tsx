@@ -6,7 +6,10 @@ import { HomePage } from "./pages/HomePage";
 import { PropertiesPage } from "./pages/PropertiesPage";
 import { PropertyDetailPage } from "./pages/PropertyDetailPage";
 import { LoginPage } from "./pages/LoginPage";
+import { RegisterPage } from "./pages/RegisterPage";
 import { AdminPage } from "./pages/AdminPage";
+import { BecomeAgentPage } from "./pages/BecomeAgentPage";
+import { AgentDashboardPage } from "./pages/AgentDashboardPage";
 
 function App() {
   return (
@@ -21,7 +24,10 @@ function App() {
               <Route path="/properties" element={<PropertiesPage />} />
               <Route path="/properties/:id" element={<PropertyDetailPage />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
               <Route path="/admin" element={<AdminPage />} />
+              <Route path="/become-agent" element={<BecomeAgentPage />} />
+              <Route path="/agent-dashboard" element={<AgentDashboardPage />} />
             </Routes>
           </main>
 
