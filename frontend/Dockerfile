@@ -18,14 +18,17 @@ ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
 ENV VITE_PAYPAL_CLIENT_ID=$VITE_PAYPAL_CLIENT_ID
 ENV VITE_PAYPAL_MODE=$VITE_PAYPAL_MODE
 
-# Copiar archivos de dependencias
-COPY package*.json ./
+# Copiar shared types primero
+COPY shared/ ./shared/
+
+# Copiar archivos de dependencias del frontend
+COPY frontend/package*.json ./
 
 # Instalar todas las dependencias (incluyendo devDependencies para build)
 RUN npm ci
 
-# Copiar código fuente
-COPY . .
+# Copiar código fuente del frontend
+COPY frontend/ ./
 
 # Construir la aplicación
 RUN npm run build

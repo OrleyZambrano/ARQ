@@ -100,7 +100,7 @@ jobs:
             --build-arg VITE_BACKEND_URL=${{ needs.deploy-backend.outputs.backend-url }} \
             --build-arg VITE_PAYPAL_CLIENT_ID=${{ secrets.PAYPAL_CLIENT_ID }} \
             --build-arg VITE_PAYPAL_MODE=${{ secrets.PAYPAL_MODE }} \
-            ./frontend
+            --file ./frontend/Dockerfile .
           docker push "${DOCKER_TAG}"
 
       - name: "Deploy Frontend to Cloud Run"

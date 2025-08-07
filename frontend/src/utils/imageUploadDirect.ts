@@ -86,9 +86,7 @@ export async function uploadImageDirect({
       throw new Error(`Upload failed: ${response.status} - ${errorText}`);
     }
 
-    const result = await response.json();
-
-    // Obtener URL pública
+    // Obtener URL pública (el result no se necesita para el Supabase public URL)
     const { data: urlData } = supabase.storage
       .from(bucketName)
       .getPublicUrl(fileName);

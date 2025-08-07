@@ -28,7 +28,7 @@ export interface PropertyStatusHistory {
   updated_at: string;
 }
 
-class PropertyStatusManager {
+export class PropertyStatusManager {
   private static instance: PropertyStatusManager;
 
   static getInstance(): PropertyStatusManager {
@@ -209,8 +209,8 @@ class PropertyStatusManager {
         .order("updated_at", { ascending: false });
 
       return data || [];
-    } catch (error) {
-      console.error("Error fetching status history:", error);
+    } catch (err) {
+      console.error("Error fetching status history:", err);
       return [];
     }
   }
@@ -239,8 +239,8 @@ class PropertyStatusManager {
         .order("updated_at", { ascending: false });
 
       return data || [];
-    } catch (error) {
-      console.error("Error fetching properties by status:", error);
+    } catch (err) {
+      console.error("Error fetching properties by status:", err);
       return [];
     }
   }
