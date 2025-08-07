@@ -9,11 +9,25 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const { signIn, user } = useAuth();
+  const { signIn, user, isAdmin, loading: authLoading } = useAuth();
 
-  // Si ya está autenticado, redirigir al admin dashboard
-  if (user) {
+  // Esperar a que termine la carga de autenticación
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Si ya está autenticado y es admin, redirigir
+  if (user && isAdmin) {
     return <Navigate to="/admin" replace />;
+  }
+
+  // Si está autenticado pero no es admin, redirigir al home
+  if (user && !isAdmin) {
+    return <Navigate to="/" replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

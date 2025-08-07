@@ -66,33 +66,81 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserProfile = async (userId: string) => {
     try {
-      // Cargar perfil de usuario
+      // Cargar perfil de usuario con manejo de errores
       const { data: profile, error: profileError } = await supabase
         .from("user_profiles")
         .select("*")
         .eq("id", userId)
-        .single();
+        .maybeSingle(); // Cambiar de .single() a .maybeSingle()
 
-      if (!profileError && profile) {
+      if (profileError) {
+        console.error("Error loading user profile:", profileError);
+        // Si es error 406 o similar, continuar con valores por defecto
+        setUserProfile(null);
+        setIsAdmin(false);
+        setIsAgent(false);
+        return;
+      }
+
+      if (profile) {
         setUserProfile(profile);
         setIsAdmin(profile.role === "admin");
         setIsAgent(profile.role === "agent");
 
         // Si es agente, cargar información adicional
         if (profile.role === "agent") {
-          const { data: agent, error: agentError } = await supabase
-            .from("agents")
-            .select("*")
-            .eq("id", userId)
-            .single();
+          try {
+            const { data: agent, error: agentError } = await supabase
+              .from("agents")
+              .select("*")
+              .eq("id", userId)
+              .maybeSingle(); // También cambiar aquí
 
-          if (!agentError && agent) {
-            setAgentProfile(agent);
+            if (!agentError && agent) {
+              setAgentProfile(agent);
+            }
+          } catch (agentErr) {
+            console.error("Error loading agent profile:", agentErr);
           }
         }
+      } else {
+        // Si no hay perfil, crear uno automáticamente
+        console.log("No profile found, creating one...");
+        await createMissingProfile(userId);
       }
     } catch (error) {
       console.error("Error loading user profile:", error);
+      // En caso de error crítico, establecer valores seguros
+      setUserProfile(null);
+      setIsAdmin(false);
+      setIsAgent(false);
+    }
+  };
+
+  const createMissingProfile = async (userId: string) => {
+    try {
+      const { data: authUser } = await supabase.auth.getUser();
+      if (authUser?.user) {
+        const { error } = await supabase.from("user_profiles").insert({
+          id: userId,
+          email: authUser.user.email,
+          full_name:
+            authUser.user.user_metadata?.full_name ||
+            authUser.user.email?.split("@")[0] ||
+            "Usuario",
+          first_name: authUser.user.user_metadata?.first_name || "Usuario",
+          last_name: authUser.user.user_metadata?.last_name || "",
+          role: "buyer",
+        });
+
+        if (!error) {
+          console.log("Profile created successfully");
+          // Recargar perfil después de crearlo
+          await loadUserProfile(userId);
+        }
+      }
+    } catch (error) {
+      console.error("Error creating missing profile:", error);
     }
   };
 
@@ -125,8 +173,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           full_name: fullName,
           first_name: firstName,
           last_name: lastName,
-        }
-      }
+        },
+      },
     });
 
     if (!error && data.user) {
