@@ -1,7 +1,14 @@
 import { Link } from "react-router-dom";
-import { Home, Search, User, Menu } from "lucide-react";
+import { Home, Search, User, Menu, LogOut, Shield } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
 
 export function Header() {
+  const { user, signOut, isAdmin } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -45,9 +52,36 @@ export function Header() {
             <button className="p-2 text-gray-600 hover:text-primary-600 transition-colors">
               <Search className="h-5 w-5" />
             </button>
-            <button className="p-2 text-gray-600 hover:text-primary-600 transition-colors">
-              <User className="h-5 w-5" />
-            </button>
+            
+            {user ? (
+              <div className="flex items-center space-x-3">
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <Shield className="h-4 w-4 mr-1" />
+                    Admin
+                  </Link>
+                )}
+                <span className="text-sm text-gray-700">{user.email}</span>
+                <button
+                  onClick={handleSignOut}
+                  className="p-2 text-gray-600 hover:text-red-600 transition-colors"
+                  title="Cerrar sesión"
+                >
+                  <LogOut className="h-5 w-5" />
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="p-2 text-gray-600 hover:text-primary-600 transition-colors"
+                title="Iniciar sesión"
+              >
+                <User className="h-5 w-5" />
+              </Link>
+            )}
             <button className="btn-primary hidden md:block">
               Publicar Propiedad
             </button>
