@@ -21,8 +21,8 @@ ENV VITE_PAYPAL_MODE=$VITE_PAYPAL_MODE
 # Copiar archivos de dependencias
 COPY package*.json ./
 
-# Instalar dependencias
-RUN npm ci --only=production
+# Instalar todas las dependencias (incluyendo devDependencies para build)
+RUN npm ci
 
 # Copiar código fuente
 COPY . .
