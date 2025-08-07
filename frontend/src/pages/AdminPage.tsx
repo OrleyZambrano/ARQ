@@ -75,7 +75,7 @@ export function AdminPage() {
           approval_status: status,
           approval_notes: approvalNotes,
           approved_by: user?.id,
-          credits: status === "approved" ? 10 : 0, // Dar créditos si es aprobado
+          publicaciones_disponibles: status === "approved" ? 2 : 0, // Dar 2 publicaciones si es aprobado
           is_verified: status === "approved",
         })
         .eq("id", agentId);

@@ -10,11 +10,20 @@ import { RegisterPage } from "./pages/RegisterPage";
 import { AdminPage } from "./pages/AdminPage";
 import { BecomeAgentPage } from "./pages/BecomeAgentPage";
 import { AgentDashboardPage } from "./pages/AgentDashboardPage";
+import { AddPropertyPage } from "./pages/AddPropertyPage";
+import { MyPropertiesPage } from "./pages/MyPropertiesPage";
+import { EditPropertyPage } from "./pages/EditPropertyPage";
+import { PaymentPlansPage } from "./pages/PaymentPlansPage";
 
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <Router
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
         <div className="min-h-screen flex flex-col bg-gray-50">
           <Header />
 
@@ -27,7 +36,12 @@ function App() {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/become-agent" element={<BecomeAgentPage />} />
+              <Route path="/dashboard" element={<AgentDashboardPage />} />
               <Route path="/agent-dashboard" element={<AgentDashboardPage />} />
+              <Route path="/add-property" element={<AddPropertyPage />} />
+              <Route path="/my-properties" element={<MyPropertiesPage />} />
+              <Route path="/edit-property/:id" element={<EditPropertyPage />} />
+              <Route path="/payment-plans" element={<PaymentPlansPage />} />
             </Routes>
           </main>
 

@@ -235,7 +235,7 @@ export function BecomeAgentPage() {
         company_name: formData.companyName || null,
         website_url: formData.websiteUrl || null,
         description: formData.description || null,
-        credits: 0, // Sin créditos hasta ser aprobado
+        publicaciones_disponibles: 0, // Sin publicaciones hasta ser aprobado
         is_verified: false,
         rating: 0.0,
         total_ratings: 0,
@@ -305,7 +305,8 @@ export function BecomeAgentPage() {
                         Una vez aprobada, tendrás acceso completo como agente
                       </li>
                       <li>
-                        Incluirá 10 créditos iniciales para publicar propiedades
+                        Incluirá 2 publicaciones iniciales para subir
+                        propiedades
                       </li>
                     </ul>
                   </div>
@@ -483,7 +484,7 @@ export function BecomeAgentPage() {
                     </h3>
                     <div className="mt-2 text-sm text-blue-700">
                       <ul className="list-disc space-y-1 ml-5">
-                        <li>10 créditos iniciales gratuitos</li>
+                        <li>2 publicaciones iniciales gratuitas</li>
                         <li>Publica propiedades ilimitadas</li>
                         <li>Panel de control personalizado</li>
                         <li>Gestión de leads y contactos</li>

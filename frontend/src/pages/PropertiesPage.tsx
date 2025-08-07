@@ -1,28 +1,37 @@
-import { useState, useEffect } from 'react';
-import { MapPin, Grid, List } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { MapPin, Grid, List } from "lucide-react";
+import { Link } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 
 interface Property {
   id: string;
   title: string;
   description: string;
   price: number;
-  property_type: "apartment" | "house" | "commercial" | "land";
-  transaction_type: "sale" | "rent";
-  location: {
-    address: string;
-    city: string;
-    state: string;
-    country: string;
-  };
-  features: {
-    bedrooms?: number;
-    bathrooms?: number;
-    area?: number;
-    parking_spaces?: number;
-  };
+  currency: string;
+  property_type: string;
+  transaction_type: "venta" | "alquiler";
+  bedrooms?: number;
+  bathrooms?: number;
+  area_total?: number;
+  area_constructed?: number;
+  parking_spaces?: number;
+  address: string;
+  neighborhood?: string;
+  city: string;
+  province: string;
+  country: string;
+  latitude?: number;
+  longitude?: number;
+  amenities: string[];
+  features: any;
   images: string[];
-  status: "active" | "inactive" | "sold" | "rented";
+  status: string;
+  is_featured: boolean;
+  is_urgent: boolean;
+  views_count: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export function PropertiesPage() {
@@ -46,18 +55,36 @@ export function PropertiesPage() {
     setLoading(true);
     try {
       // Construir query params
-      const params = new URLSearchParams();
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value) params.append(key, value);
-      });
+      let query = supabase
+        .from("properties")
+        .select("*")
+        .eq("status", "published")
+        .order("created_at", { ascending: false });
 
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/properties?${params}`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setProperties(data);
+      // Aplicar filtros
+      if (filters.property_type) {
+        query = query.eq("property_type", filters.property_type);
       }
+      if (filters.transaction_type) {
+        query = query.eq("transaction_type", filters.transaction_type);
+      }
+      if (filters.city) {
+        query = query.ilike("city", `%${filters.city}%`);
+      }
+      if (filters.min_price) {
+        query = query.gte("price", parseFloat(filters.min_price));
+      }
+      if (filters.max_price) {
+        query = query.lte("price", parseFloat(filters.max_price));
+      }
+      if (filters.bedrooms) {
+        query = query.eq("bedrooms", parseInt(filters.bedrooms));
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setProperties(data || []);
     } catch (error) {
       console.error("Error fetching properties:", error);
     }
@@ -74,7 +101,7 @@ export function PropertiesPage() {
       currency: "USD",
     });
 
-    if (transactionType === "rent") {
+    if (transactionType === "alquiler") {
       return `${formatter.format(price)}/mes`;
     }
     return formatter.format(price);
@@ -82,10 +109,14 @@ export function PropertiesPage() {
 
   const getPropertyTypeLabel = (type: string) => {
     const types = {
-      apartment: "Departamento",
-      house: "Casa",
-      commercial: "Comercial",
-      land: "Terreno",
+      casa: "Casa",
+      departamento: "Departamento",
+      oficina: "Oficina",
+      local_comercial: "Local Comercial",
+      terreno: "Terreno",
+      bodega: "Bodega",
+      quinta: "Quinta",
+      penthouse: "Penthouse",
     };
     return types[type as keyof typeof types] || type;
   };
@@ -109,8 +140,8 @@ export function PropertiesPage() {
                   }
                 >
                   <option value="">Cualquiera</option>
-                  <option value="sale">Comprar</option>
-                  <option value="rent">Rentar</option>
+                  <option value="venta">Comprar</option>
+                  <option value="alquiler">Rentar</option>
                 </select>
               </div>
 
@@ -126,10 +157,14 @@ export function PropertiesPage() {
                   }
                 >
                   <option value="">Cualquiera</option>
-                  <option value="apartment">Departamento</option>
-                  <option value="house">Casa</option>
-                  <option value="commercial">Comercial</option>
-                  <option value="land">Terreno</option>
+                  <option value="casa">Casa</option>
+                  <option value="departamento">Departamento</option>
+                  <option value="oficina">Oficina</option>
+                  <option value="local_comercial">Local Comercial</option>
+                  <option value="terreno">Terreno</option>
+                  <option value="bodega">Bodega</option>
+                  <option value="quinta">Quinta</option>
+                  <option value="penthouse">Penthouse</option>
                 </select>
               </div>
 
@@ -199,13 +234,21 @@ export function PropertiesPage() {
             {/* Controles de vista */}
             <div className="flex items-center space-x-2">
               <button
-                className={`p-2 rounded ${viewMode === "grid" ? "bg-primary-100 text-primary-600" : "text-gray-600 hover:bg-gray-100"}`}
+                className={`p-2 rounded ${
+                  viewMode === "grid"
+                    ? "bg-primary-100 text-primary-600"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
                 onClick={() => setViewMode("grid")}
               >
                 <Grid className="h-5 w-5" />
               </button>
               <button
-                className={`p-2 rounded ${viewMode === "list" ? "bg-primary-100 text-primary-600" : "text-gray-600 hover:bg-gray-100"}`}
+                className={`p-2 rounded ${
+                  viewMode === "list"
+                    ? "bg-primary-100 text-primary-600"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
                 onClick={() => setViewMode("list")}
               >
                 <List className="h-5 w-5" />
@@ -241,7 +284,9 @@ export function PropertiesPage() {
                 className={`card ${viewMode === "list" ? "flex" : ""}`}
               >
                 <div
-                  className={`relative ${viewMode === "list" ? "w-80 flex-shrink-0" : ""}`}
+                  className={`relative ${
+                    viewMode === "list" ? "w-80 flex-shrink-0" : ""
+                  }`}
                 >
                   <img
                     src={property.images[0] || "/placeholder-property.jpg"}
@@ -253,7 +298,9 @@ export function PropertiesPage() {
                     }`}
                   />
                   <div className="absolute top-4 left-4 bg-primary-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                    {property.transaction_type === "sale" ? "Venta" : "Renta"}
+                    {property.transaction_type === "venta"
+                      ? "Venta"
+                      : "Alquiler"}
                   </div>
                 </div>
 
@@ -270,7 +317,7 @@ export function PropertiesPage() {
                   <div className="flex items-center text-gray-600 mb-3">
                     <MapPin className="h-4 w-4 mr-1" />
                     <span className="text-sm">
-                      {property.location.city}, {property.location.state}
+                      {property.city}, {property.province}
                     </span>
                   </div>
 
@@ -287,19 +334,19 @@ export function PropertiesPage() {
                       {formatPrice(property.price, property.transaction_type)}
                     </span>
 
-                    {property.features.bedrooms && (
+                    {property.bedrooms && (
                       <div className="flex items-center space-x-2 text-sm text-gray-600">
-                        <span>{property.features.bedrooms} hab</span>
-                        {property.features.bathrooms && (
+                        <span>{property.bedrooms} hab</span>
+                        {property.bathrooms && (
                           <>
                             <span>•</span>
-                            <span>{property.features.bathrooms} baños</span>
+                            <span>{property.bathrooms} baños</span>
                           </>
                         )}
-                        {property.features.area && (
+                        {property.area_total && (
                           <>
                             <span>•</span>
-                            <span>{property.features.area}m²</span>
+                            <span>{property.area_total}m²</span>
                           </>
                         )}
                       </div>
