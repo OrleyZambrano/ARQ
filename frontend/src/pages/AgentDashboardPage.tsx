@@ -1,16 +1,16 @@
-import { useAuth } from '../contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
-import { 
-  Building, 
-  CreditCard, 
-  Star, 
-  Eye, 
-  Phone, 
-  Mail, 
+import { useAuth } from "../contexts/AuthContext";
+import { Navigate } from "react-router-dom";
+import {
+  Building,
+  CreditCard,
+  Star,
+  Eye,
+  Phone,
+  Mail,
   TrendingUp,
   Plus,
-  Settings 
-} from 'lucide-react';
+  Settings,
+} from "lucide-react";
 
 export function AgentDashboardPage() {
   const { user, isAgent, agentProfile, userProfile, loading } = useAuth();
@@ -29,29 +29,29 @@ export function AgentDashboardPage() {
 
   const stats = [
     {
-      name: 'Propiedades Activas',
-      value: '0',
+      name: "Propiedades Activas",
+      value: "0",
       icon: Building,
-      color: 'bg-blue-500'
+      color: "bg-blue-500",
     },
     {
-      name: 'Créditos Disponibles',
-      value: agentProfile?.credits || '0',
+      name: "Créditos Disponibles",
+      value: agentProfile?.credits || "0",
       icon: CreditCard,
-      color: 'bg-green-500'
+      color: "bg-green-500",
     },
     {
-      name: 'Rating Promedio',
-      value: agentProfile?.rating?.toFixed(1) || '0.0',
+      name: "Rating Promedio",
+      value: agentProfile?.rating?.toFixed(1) || "0.0",
       icon: Star,
-      color: 'bg-yellow-500'
+      color: "bg-yellow-500",
     },
     {
-      name: 'Vistas Totales',
-      value: '0',
+      name: "Vistas Totales",
+      value: "0",
       icon: Eye,
-      color: 'bg-purple-500'
-    }
+      color: "bg-purple-500",
+    },
   ];
 
   return (
@@ -94,11 +94,16 @@ export function AgentDashboardPage() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {stats.map((stat) => (
-            <div key={stat.name} className="bg-white overflow-hidden shadow rounded-lg">
+            <div
+              key={stat.name}
+              className="bg-white overflow-hidden shadow rounded-lg"
+            >
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <div className={`h-8 w-8 rounded-md ${stat.color} flex items-center justify-center`}>
+                    <div
+                      className={`h-8 w-8 rounded-md ${stat.color} flex items-center justify-center`}
+                    >
                       <stat.icon className="h-4 w-4 text-white" />
                     </div>
                   </div>
@@ -138,7 +143,7 @@ export function AgentDashboardPage() {
                       </div>
                       <div className="flex items-center text-sm text-gray-900">
                         <Phone className="h-4 w-4 text-gray-400 mr-2" />
-                        {userProfile?.phone || 'No especificado'}
+                        {userProfile?.phone || "No especificado"}
                       </div>
                     </div>
                   </div>
@@ -148,19 +153,19 @@ export function AgentDashboardPage() {
                     </h4>
                     <div className="space-y-2">
                       <div className="text-sm text-gray-900">
-                        <span className="font-medium">Empresa:</span>{' '}
-                        {agentProfile?.company_name || 'No especificada'}
+                        <span className="font-medium">Empresa:</span>{" "}
+                        {agentProfile?.company_name || "No especificada"}
                       </div>
                       <div className="text-sm text-gray-900">
-                        <span className="font-medium">Licencia:</span>{' '}
-                        {agentProfile?.license_number || 'No especificada'}
+                        <span className="font-medium">Licencia:</span>{" "}
+                        {agentProfile?.license_number || "No especificada"}
                       </div>
                       {agentProfile?.website_url && (
                         <div className="text-sm text-gray-900">
-                          <span className="font-medium">Web:</span>{' '}
-                          <a 
-                            href={agentProfile.website_url} 
-                            target="_blank" 
+                          <span className="font-medium">Web:</span>{" "}
+                          <a
+                            href={agentProfile.website_url}
+                            target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:text-blue-500"
                           >
@@ -206,11 +211,15 @@ export function AgentDashboardPage() {
                   </div>
                   <div className="flex items-center">
                     <div className="h-2 w-2 bg-green-500 rounded-full mr-3"></div>
-                    <span className="text-sm text-gray-600">Información completada</span>
+                    <span className="text-sm text-gray-600">
+                      Información completada
+                    </span>
                   </div>
                   <div className="flex items-center">
                     <div className="h-2 w-2 bg-yellow-500 rounded-full mr-3"></div>
-                    <span className="text-sm text-gray-600">Verificación pendiente</span>
+                    <span className="text-sm text-gray-600">
+                      Verificación pendiente
+                    </span>
                   </div>
                 </div>
               </div>

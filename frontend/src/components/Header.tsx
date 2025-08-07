@@ -1,5 +1,13 @@
 import { Link } from "react-router-dom";
-import { Home, Search, User, Menu, LogOut, Shield, Building } from "lucide-react";
+import {
+  Home,
+  Search,
+  User,
+  Menu,
+  LogOut,
+  Shield,
+  Building,
+} from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
 export function Header() {

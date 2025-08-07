@@ -7,7 +7,11 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
+  signUp: (
+    email: string,
+    password: string,
+    fullName: string
+  ) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
   isAgent: boolean;
@@ -39,21 +43,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     // Escuchar cambios de autenticación
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          loadUserProfile(session.user.id);
-        } else {
-          setUserProfile(null);
-          setAgentProfile(null);
-          setIsAdmin(false);
-          setIsAgent(false);
-        }
-        setLoading(false);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        loadUserProfile(session.user.id);
+      } else {
+        setUserProfile(null);
+        setAgentProfile(null);
+        setIsAdmin(false);
+        setIsAgent(false);
       }
-    );
+      setLoading(false);
+    });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -62,22 +66,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // Cargar perfil de usuario
       const { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', userId)
+        .from("user_profiles")
+        .select("*")
+        .eq("id", userId)
         .single();
 
       if (!profileError && profile) {
         setUserProfile(profile);
-        setIsAdmin(profile.role === 'admin');
-        setIsAgent(profile.role === 'agent');
+        setIsAdmin(profile.role === "admin");
+        setIsAgent(profile.role === "agent");
 
         // Si es agente, cargar información adicional
-        if (profile.role === 'agent') {
+        if (profile.role === "agent") {
           const { data: agent, error: agentError } = await supabase
-            .from('agents')
-            .select('*')
-            .eq('id', userId)
+            .from("agents")
+            .select("*")
+            .eq("id", userId)
             .single();
 
           if (!agentError && agent) {
@@ -86,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
     } catch (error) {
-      console.error('Error loading user profile:', error);
+      console.error("Error loading user profile:", error);
     }
   };
 
@@ -112,14 +116,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (!error && data.user) {
       // Crear perfil de usuario
-      await supabase
-        .from('user_profiles')
-        .insert({
-          id: data.user.id,
-          email: data.user.email,
-          full_name: fullName,
-          role: 'buyer'
-        });
+      await supabase.from("user_profiles").insert({
+        id: data.user.id,
+        email: data.user.email,
+        full_name: fullName,
+        role: "buyer",
+      });
     }
 
     return { error };

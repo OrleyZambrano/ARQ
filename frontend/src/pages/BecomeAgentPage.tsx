@@ -1,20 +1,28 @@
-import { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
-import { Shield, Phone, Building, FileText, AlertCircle, CheckCircle, Star } from 'lucide-react';
+import { useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import { Navigate } from "react-router-dom";
+import { supabase } from "../lib/supabase";
+import {
+  Shield,
+  Phone,
+  Building,
+  FileText,
+  AlertCircle,
+  CheckCircle,
+  Star,
+} from "lucide-react";
 
 export function BecomeAgentPage() {
-  const { user, userProfile, isAgent, refreshProfile } = useAuth();
+  const { user, isAgent, refreshProfile } = useAuth();
   const [formData, setFormData] = useState({
-    phone: '',
-    licenseNumber: '',
-    companyName: '',
-    websiteUrl: '',
-    description: ''
+    phone: "",
+    licenseNumber: "",
+    companyName: "",
+    websiteUrl: "",
+    description: "",
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
   if (!user) {
@@ -25,54 +33,53 @@ export function BecomeAgentPage() {
     return <Navigate to="/agent-dashboard" replace />;
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       // 1. Actualizar role en user_profiles
       const { error: profileError } = await supabase
-        .from('user_profiles')
-        .update({ 
-          role: 'agent',
+        .from("user_profiles")
+        .update({
+          role: "agent",
           phone: formData.phone,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', user.id);
+        .eq("id", user.id);
 
       if (profileError) throw profileError;
 
       // 2. Crear registro en agents
-      const { error: agentError } = await supabase
-        .from('agents')
-        .insert({
-          id: user.id,
-          license_number: formData.licenseNumber || null,
-          company_name: formData.companyName || null,
-          website_url: formData.websiteUrl || null,
-          description: formData.description || null,
-          credits: 10, // Créditos iniciales
-          is_verified: false, // Pendiente de verificación
-          rating: 0.00,
-          total_ratings: 0
-        });
+      const { error: agentError } = await supabase.from("agents").insert({
+        id: user.id,
+        license_number: formData.licenseNumber || null,
+        company_name: formData.companyName || null,
+        website_url: formData.websiteUrl || null,
+        description: formData.description || null,
+        credits: 10, // Créditos iniciales
+        is_verified: false, // Pendiente de verificación
+        rating: 0.0,
+        total_ratings: 0,
+      });
 
       if (agentError) throw agentError;
 
       // 3. Refrescar perfil
       await refreshProfile();
       setSuccess(true);
-
     } catch (err: any) {
-      setError(err.message || 'Error al convertirse en agente');
+      setError(err.message || "Error al convertirse en agente");
     } finally {
       setLoading(false);
     }
@@ -102,14 +109,17 @@ export function BecomeAgentPage() {
                     ¡Empezaste con 10 créditos!
                   </h3>
                   <div className="mt-2 text-sm text-blue-700">
-                    <p>Usa tus créditos para publicar propiedades y destacar tus anuncios.</p>
+                    <p>
+                      Usa tus créditos para publicar propiedades y destacar tus
+                      anuncios.
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
             <div className="mt-6">
-              <button 
-                onClick={() => window.location.href = '/agent-dashboard'}
+              <button
+                onClick={() => (window.location.href = "/agent-dashboard")}
                 className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 Ir al Panel de Agente
@@ -157,7 +167,10 @@ export function BecomeAgentPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="phone"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Teléfono *
                   </label>
                   <div className="mt-1 relative">
@@ -178,7 +191,10 @@ export function BecomeAgentPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="licenseNumber" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="licenseNumber"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Número de Licencia
                   </label>
                   <div className="mt-1 relative">
@@ -199,7 +215,10 @@ export function BecomeAgentPage() {
               </div>
 
               <div>
-                <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="companyName"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Empresa/Inmobiliaria
                 </label>
                 <div className="mt-1 relative">
@@ -219,7 +238,10 @@ export function BecomeAgentPage() {
               </div>
 
               <div>
-                <label htmlFor="websiteUrl" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="websiteUrl"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Sitio Web
                 </label>
                 <div className="mt-1">
@@ -236,7 +258,10 @@ export function BecomeAgentPage() {
               </div>
 
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="description"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Descripción Profesional
                 </label>
                 <div className="mt-1">
@@ -293,7 +318,7 @@ export function BecomeAgentPage() {
                       Procesando...
                     </div>
                   ) : (
-                    'Convertirse en Agente'
+                    "Convertirse en Agente"
                   )}
                 </button>
               </div>

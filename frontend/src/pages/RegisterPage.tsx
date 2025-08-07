@@ -1,17 +1,24 @@
-import { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { Navigate, Link } from 'react-router-dom';
-import { UserPlus, User, Lock, Mail, AlertCircle, CheckCircle } from 'lucide-react';
+import { useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import { Navigate, Link } from "react-router-dom";
+import {
+  UserPlus,
+  User,
+  Lock,
+  Mail,
+  AlertCircle,
+  CheckCircle,
+} from "lucide-react";
 
 export function RegisterPage() {
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    fullName: ''
+    email: "",
+    password: "",
+    confirmPassword: "",
+    fullName: "",
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
   const { signUp, user } = useAuth();
@@ -24,38 +31,42 @@ export function RegisterPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     // Validaciones
     if (formData.password !== formData.confirmPassword) {
-      setError('Las contraseñas no coinciden');
+      setError("Las contraseñas no coinciden");
       setLoading(false);
       return;
     }
 
     if (formData.password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
+      setError("La contraseña debe tener al menos 6 caracteres");
       setLoading(false);
       return;
     }
 
     try {
-      const { error } = await signUp(formData.email, formData.password, formData.fullName);
-      
+      const { error } = await signUp(
+        formData.email,
+        formData.password,
+        formData.fullName
+      );
+
       if (error) {
-        setError(error.message || 'Error al crear la cuenta');
+        setError(error.message || "Error al crear la cuenta");
       } else {
         setSuccess(true);
       }
     } catch (err) {
-      setError('Error inesperado al crear la cuenta');
+      setError("Error inesperado al crear la cuenta");
     } finally {
       setLoading(false);
     }
@@ -73,7 +84,8 @@ export function RegisterPage() {
               ¡Cuenta Creada Exitosamente!
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
-              Tu cuenta ha sido creada como comprador. Revisa tu email para confirmar tu cuenta.
+              Tu cuenta ha sido creada como comprador. Revisa tu email para
+              confirmar tu cuenta.
             </p>
             <div className="mt-6">
               <Link
@@ -112,12 +124,8 @@ export function RegisterPage() {
                   <AlertCircle className="h-5 w-5 text-red-400" />
                 </div>
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">
-                    Error
-                  </h3>
-                  <div className="mt-2 text-sm text-red-700">
-                    {error}
-                  </div>
+                  <h3 className="text-sm font-medium text-red-800">Error</h3>
+                  <div className="mt-2 text-sm text-red-700">{error}</div>
                 </div>
               </div>
             </div>
@@ -224,15 +232,18 @@ export function RegisterPage() {
                   Creando cuenta...
                 </div>
               ) : (
-                'Crear Cuenta'
+                "Crear Cuenta"
               )}
             </button>
           </div>
 
           <div className="text-center">
             <p className="text-sm text-gray-600">
-              ¿Ya tienes cuenta?{' '}
-              <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
+              ¿Ya tienes cuenta?{" "}
+              <Link
+                to="/login"
+                className="font-medium text-blue-600 hover:text-blue-500"
+              >
                 Iniciar sesión
               </Link>
             </p>
