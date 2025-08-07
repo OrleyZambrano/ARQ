@@ -1,6 +1,7 @@
 import { useAuth } from "../contexts/AuthContext";
 import { Navigate, Link } from "react-router-dom";
 import { useActiveProperties } from "../hooks/useActiveProperties";
+import VisitsManagement from "../components/VisitsManagement";
 import {
   Building,
   Upload,
@@ -323,6 +324,11 @@ export function AgentDashboardPage() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Gestión de Visitas */}
+            <div className="lg:col-span-2">
+              <VisitsManagement />
             </div>
 
             {/* Actividad Reciente */}

@@ -14,6 +14,7 @@ import { AddPropertyPage } from "./pages/AddPropertyPage";
 import { MyPropertiesPage } from "./pages/MyPropertiesPage";
 import { EditPropertyPage } from "./pages/EditPropertyPage";
 import { PaymentPlansPage } from "./pages/PaymentPlansPage";
+import { MyVisitsPage } from "./pages/MyVisitsPage";
 import AuthErrorHandler from "./components/AuthErrorHandler";
 
 function App() {
@@ -44,6 +45,7 @@ function App() {
                 <Route path="/my-properties" element={<MyPropertiesPage />} />
                 <Route path="/edit-property/:id" element={<EditPropertyPage />} />
                 <Route path="/payment-plans" element={<PaymentPlansPage />} />
+                <Route path="/my-visits" element={<MyVisitsPage />} />
               </Routes>
             </main>
 

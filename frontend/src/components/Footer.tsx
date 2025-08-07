@@ -14,7 +14,7 @@ export function Footer() {
             </Link>
             <p className="text-gray-300 mb-4">
               La plataforma líder en bienes raíces para encontrar, comprar y
-              vender propiedades en toda la República Mexicana. Conectamos
+              vender propiedades en todo Ecuador. Conectamos
               compradores, vendedores y arrendadores de manera fácil y segura.
             </p>
             <div className="flex space-x-4">
@@ -110,15 +110,15 @@ export function Footer() {
             <ul className="space-y-2">
               <li className="flex items-center space-x-2">
                 <Mail className="h-4 w-4 text-primary-400" />
-                <span className="text-gray-300">contacto@propfinder.com</span>
+                <span className="text-gray-300">contacto@propfinder.ec</span>
               </li>
               <li className="flex items-center space-x-2">
                 <Phone className="h-4 w-4 text-primary-400" />
-                <span className="text-gray-300">+52 55 1234 5678</span>
+                <span className="text-gray-300">+593 2 234 5678</span>
               </li>
               <li className="flex items-center space-x-2">
                 <MapPin className="h-4 w-4 text-primary-400" />
-                <span className="text-gray-300">Ciudad de México, México</span>
+                <span className="text-gray-300">Quito, Ecuador</span>
               </li>
             </ul>
           </div>

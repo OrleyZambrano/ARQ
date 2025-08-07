@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { usePropertyTracking } from "../utils/propertyTracking";
 import PropertyMap from "../components/PropertyMap";
+import VisitScheduler from "../components/VisitScheduler";
 import {
   MapPin,
   Bed,
@@ -19,6 +20,7 @@ import {
 
 interface Property {
   id: string;
+  agent_id: string;
   title: string;
   description: string;
   price: number;
@@ -72,6 +74,7 @@ export function PropertyDetailPage() {
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isVisitSchedulerOpen, setIsVisitSchedulerOpen] = useState(false);
 
   // Sistema de tracking inteligente
   const { startTracking, trackContact, trackAction, endTracking } =
@@ -602,7 +605,7 @@ export function PropertyDetailPage() {
                     className="btn-secondary w-full"
                     onClick={() => {
                       trackAction("visit_request", { method: "schedule" });
-                      // Aquí iría la lógica para agendar visita
+                      setIsVisitSchedulerOpen(true);
                     }}
                   >
                     Agendar visita
@@ -666,6 +669,22 @@ export function PropertyDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Visit Scheduler Modal */}
+      {property && (
+        <VisitScheduler
+          propertyId={property.id}
+          propertyTitle={property.title}
+          propertyAddress={property.address}
+          agentId={property.agent_id}
+          isOpen={isVisitSchedulerOpen}
+          onClose={() => setIsVisitSchedulerOpen(false)}
+          onScheduled={() => {
+            console.log('Visit scheduled successfully');
+            // Aquí podrías actualizar algún estado o mostrar una notificación
+          }}
+        />
+      )}
     </div>
   );
 }
