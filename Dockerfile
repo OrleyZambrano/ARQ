@@ -1,19 +1,27 @@
 # Multi-stage build para PropFinder App
 # Stage 1: Build backend
 FROM node:18-alpine AS backend-builder
-WORKDIR /app/backend
+WORKDIR /app
+
+# Copiar shared types para backend
+COPY shared/ ./shared/
+
+# Copiar y build backend
 COPY backend/package*.json ./
 RUN npm ci
-
 COPY backend/ .
 RUN npm run build
 
 # Stage 2: Build frontend
 FROM node:18-alpine AS frontend-builder
-WORKDIR /app/frontend
+WORKDIR /app
+
+# Copiar shared types para frontend
+COPY shared/ ./shared/
+
+# Copiar y build frontend
 COPY frontend/package*.json ./
 RUN npm ci
-
 COPY frontend/ .
 # Build frontend with production environment
 ENV VITE_BACKEND_URL=/api
@@ -28,12 +36,12 @@ RUN apk add --no-cache nodejs npm
 COPY nginx-proxy.conf /etc/nginx/conf.d/default.conf
 
 # Copy frontend build
-COPY --from=frontend-builder /app/frontend/dist /usr/share/nginx/html
+COPY --from=frontend-builder /app/dist /usr/share/nginx/html
 
 # Copy backend
 WORKDIR /app/backend
-COPY --from=backend-builder /app/backend/dist ./dist
-COPY --from=backend-builder /app/backend/package*.json ./
+COPY --from=backend-builder /app/dist ./dist
+COPY --from=backend-builder /app/package*.json ./
 
 # Install only production dependencies for runtime
 RUN npm ci --only=production
