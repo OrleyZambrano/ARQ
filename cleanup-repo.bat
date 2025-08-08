@@ -51,7 +51,7 @@ del /f "test-docker-build.sh" 2>nul
 
 REM Eliminar archivos de configuración obsoletos
 del /f "template-alternativo.yml" 2>nul
-del /f "nginx-proxy.conf" 2>nul
+REM nginx-proxy.conf NO se elimina - es necesario para Dockerfile
 del /f "error-consola.txt" 2>nul
 
 REM Eliminar documentación técnica obsoleta
@@ -73,6 +73,7 @@ REM Mostrar archivos restantes importantes
 echo 📁 Archivos importantes que se mantienen:
 echo    - README.md (documentación principal)
 echo    - Dockerfile (imagen principal)
+echo    - nginx-proxy.conf (configuración proxy nginx)
 echo    - SUPABASE_DATABASE_SETUP.sql (setup de BD principal)
 echo    - .github/ (workflows de CI/CD)
 echo    - frontend/ (código fuente)
