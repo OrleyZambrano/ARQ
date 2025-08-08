@@ -8,8 +8,10 @@ import {
   Shield,
   Building,
   Calendar,
+  MessageCircle,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import { ChatNotification } from "./ChatNotification";
 
 export function Header() {
   const { user, signOut, isAdmin, isAgent } = useAuth();
@@ -91,6 +93,15 @@ export function Header() {
                       <Calendar className="h-4 w-4 mr-1" />
                       Mis Visitas
                     </Link>
+                    <ChatNotification>
+                      <Link
+                        to="/chat"
+                        className="inline-flex items-center px-3 py-2 border border-purple-300 text-sm font-medium rounded-md text-purple-700 bg-purple-50 hover:bg-purple-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                      >
+                        <MessageCircle className="h-4 w-4 mr-1" />
+                        Mensajes
+                      </Link>
+                    </ChatNotification>
                     <Link
                       to="/become-agent"
                       className="inline-flex items-center px-3 py-2 border border-green-300 text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
@@ -99,6 +110,17 @@ export function Header() {
                       Ser Agente
                     </Link>
                   </>
+                )}
+                {isAgent && (
+                  <ChatNotification>
+                    <Link
+                      to="/chat"
+                      className="inline-flex items-center px-3 py-2 border border-purple-300 text-sm font-medium rounded-md text-purple-700 bg-purple-50 hover:bg-purple-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                    >
+                      <MessageCircle className="h-4 w-4 mr-1" />
+                      Mensajes
+                    </Link>
+                  </ChatNotification>
                 )}
                 <span className="text-sm text-gray-700">{user.email}</span>
                 <button

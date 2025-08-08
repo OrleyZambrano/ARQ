@@ -12,6 +12,7 @@ import { MyPropertiesPage } from "../pages/MyPropertiesPage";
 import { EditPropertyPage } from "../pages/EditPropertyPage";
 import { PaymentPlansPage } from "../pages/PaymentPlansPage";
 import { MyVisitsPage } from "../pages/MyVisitsPage";
+import { ChatPage } from "../pages/ChatPage";
 
 export function AppRoutes() {
   return (
@@ -30,6 +31,7 @@ export function AppRoutes() {
       <Route path="/edit-property/:id" element={<EditPropertyPage />} />
       <Route path="/payment-plans" element={<PaymentPlansPage />} />
       <Route path="/my-visits" element={<MyVisitsPage />} />
+      <Route path="/chat" element={<ChatPage />} />
     </Routes>
   );
 }

@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 import { usePropertyTracking } from "../utils/propertyTracking";
 import PropertyMap from "../components/PropertyMap";
 import VisitScheduler from "../components/VisitScheduler";
+import { ChatButton } from "../components/PropertyChat";
 import {
   MapPin,
   Bed,
@@ -493,10 +494,10 @@ export function PropertyDetailPage() {
                     <button
                       onClick={() => {
                         const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${property.latitude},${property.longitude}`;
-                        window.open(googleMapsUrl, '_blank');
+                        window.open(googleMapsUrl, "_blank");
                         trackAction("directions_request", {
                           method: "google_maps",
-                          destination: `${property.latitude},${property.longitude}`
+                          destination: `${property.latitude},${property.longitude}`,
                         });
                       }}
                       className="flex items-center space-x-1 text-primary-600 hover:text-primary-700 text-sm font-medium transition-colors"
@@ -506,7 +507,7 @@ export function PropertyDetailPage() {
                     </button>
                   )}
                 </div>
-                
+
                 <div className="mb-4">
                   <div className="flex items-start space-x-2 text-gray-600">
                     <MapPin className="h-5 w-5 mt-0.5 flex-shrink-0" />
@@ -539,7 +540,8 @@ export function PropertyDetailPage() {
                 {property.latitude && property.longitude && (
                   <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
                     <span>
-                      Coordenadas: {property.latitude.toFixed(6)}, {property.longitude.toFixed(6)}
+                      Coordenadas: {property.latitude.toFixed(6)},{" "}
+                      {property.longitude.toFixed(6)}
                     </span>
                     <span>Mapa interactivo - Arrastra para explorar</span>
                   </div>
@@ -591,16 +593,15 @@ export function PropertyDetailPage() {
                   >
                     Llamar ahora
                   </button>
-                  <button
-                    className="btn-secondary w-full"
-                    onClick={() => {
-                      trackContact();
-                      trackAction("message_contact", { method: "message" });
-                      // Aquí iría la lógica para enviar mensaje/chat
-                    }}
-                  >
-                    Enviar mensaje
-                  </button>
+
+                  <ChatButton
+                    propertyId={property.id}
+                    agentId={property.agent_id}
+                    agentName={property.agents?.full_name || "Agente"}
+                    propertyTitle={property.title}
+                    className="w-full"
+                  />
+
                   <button
                     className="btn-secondary w-full"
                     onClick={() => {
@@ -680,7 +681,7 @@ export function PropertyDetailPage() {
           isOpen={isVisitSchedulerOpen}
           onClose={() => setIsVisitSchedulerOpen(false)}
           onScheduled={() => {
-            console.log('Visit scheduled successfully');
+            console.log("Visit scheduled successfully");
             // Aquí podrías actualizar algún estado o mostrar una notificación
           }}
         />
