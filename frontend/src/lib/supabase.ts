@@ -12,13 +12,13 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'pkce',
+    flowType: "pkce",
     storage: {
       getItem: (key: string) => {
         try {
           return localStorage.getItem(key);
         } catch (error) {
-          console.error('Error getting item from localStorage:', error);
+          console.error("Error getting item from localStorage:", error);
           return null;
         }
       },
@@ -26,24 +26,25 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
         try {
           localStorage.setItem(key, value);
         } catch (error) {
-          console.error('Error setting item in localStorage:', error);
+          console.error("Error setting item in localStorage:", error);
         }
       },
       removeItem: (key: string) => {
         try {
           localStorage.removeItem(key);
         } catch (error) {
-          console.error('Error removing item from localStorage:', error);
+          console.error("Error removing item from localStorage:", error);
         }
       },
     },
   },
-  global: {
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-  },
+  // Removemos la configuración global de headers que interfiere con uploads de archivos
+  // global: {
+  //   headers: {
+  //     Accept: "application/json",
+  //     "Content-Type": "application/json",
+  //   },
+  // },
   db: {
     schema: "public",
   },
@@ -51,8 +52,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Interceptar errores de autenticación globalmente
 supabase.auth.onAuthStateChange((event, session) => {
-  if (event === 'TOKEN_REFRESHED' && !session) {
-    console.warn('Token refresh failed, clearing storage');
+  if (event === "TOKEN_REFRESHED" && !session) {
+    console.warn("Token refresh failed, clearing storage");
     localStorage.clear();
     sessionStorage.clear();
   }

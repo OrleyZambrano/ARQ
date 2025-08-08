@@ -174,30 +174,208 @@ export const EditPropertyPage = () => {
   const uploadImages = async (): Promise<string[]> => {
     const uploadedUrls: string[] = [];
 
+    // Test simple del bucket: intentar obtener una URL pública
+    try {
+      console.log("Testing bucket access...");
+      const testUrl = supabase.storage
+        .from("property-images")
+        .getPublicUrl("test");
+      console.log("Bucket access test successful:", testUrl.data.publicUrl);
+    } catch (error) {
+      console.error("Bucket access test failed:", error);
+    }
+
     for (const image of images) {
+      // Validar que sea un archivo válido
+      if (!image || !image.name || !image.type) {
+        console.error("Invalid image file:", image);
+        continue;
+      }
+
+      // Validar que sea una imagen
+      if (!image.type.startsWith("image/")) {
+        console.error("File is not an image:", image.type);
+        throw new Error(`El archivo ${image.name} no es una imagen válida.`);
+      }
+
+      // Validar tamaño (máximo 10MB)
+      if (image.size > 10 * 1024 * 1024) {
+        throw new Error(`La imagen ${image.name} es muy grande. Máximo 10MB.`);
+      }
+
+      console.log("Uploading image:", {
+        name: image.name,
+        type: image.type,
+        size: image.size,
+        userId: user?.id,
+      });
+
       const fileExt = image.name.split(".").pop();
       const fileName = `${Date.now()}-${Math.random()
         .toString(36)
         .substring(2)}.${fileExt}`;
       const filePath = `${user?.id}/${fileName}`;
 
+      console.log("Attempting upload with path:", filePath);
+      console.log("User ID:", user?.id);
+      console.log("File details:", {
+        name: image.name,
+        type: image.type,
+        size: image.size,
+        lastModified: image.lastModified,
+        constructor: image.constructor.name,
+        isFile: image instanceof File,
+        isBlob: image instanceof Blob,
+      });
+
+      // Verificar que el archivo no esté vacío o corrupto
+      if (image.size === 0) {
+        throw new Error(`El archivo ${image.name} está vacío.`);
+      }
+
+      // Leer una pequeña muestra del archivo para verificar que es un archivo real
+      try {
+        const fileSlice = image.slice(0, 100);
+        const arrayBuffer = await fileSlice.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+        console.log(
+          "File signature (first 10 bytes):",
+          Array.from(bytes.slice(0, 10))
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join(" ")
+        );
+
+        // Verificar firmas de archivos de imagen
+        const isPNG =
+          bytes[0] === 0x89 &&
+          bytes[1] === 0x50 &&
+          bytes[2] === 0x4e &&
+          bytes[3] === 0x47;
+        const isJPEG =
+          bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+        console.log("File format validation:", {
+          isPNG,
+          isJPEG,
+          detectedType: isPNG ? "PNG" : isJPEG ? "JPEG" : "Unknown",
+        });
+
+        if (
+          !isPNG &&
+          !isJPEG &&
+          !image.type.includes("webp") &&
+          !image.type.includes("gif")
+        ) {
+          throw new Error(
+            `El archivo ${image.name} no parece ser una imagen válida.`
+          );
+        }
+      } catch (validationError: any) {
+        console.error("File validation error:", validationError);
+        throw new Error(
+          `Error validando el archivo ${image.name}: ${
+            validationError?.message || "Error desconocido"
+          }`
+        );
+      }
+
       const { error: uploadError } = await supabase.storage
         .from("property-images")
         .upload(filePath, image, {
-          contentType: image.type || `image/${fileExt}`,
+          contentType: image.type,
           cacheControl: "3600",
           upsert: false,
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Upload error details:", {
+          message: uploadError.message,
+          error: uploadError,
+          filePath,
+          imageType: image.type,
+          imageSize: image.size,
+        });
+        if (uploadError.message.includes("mime type")) {
+          throw new Error(
+            `Tipo de archivo no soportado: ${image.type}. Usa JPG, PNG, WebP o GIF.`
+          );
+        }
+        if (uploadError.message.includes("Bucket not found")) {
+          throw new Error(
+            "El almacenamiento de imágenes no está configurado. Contacta al administrador."
+          );
+        }
+        if (
+          uploadError.message.includes("not authorized") ||
+          uploadError.message.includes("permission")
+        ) {
+          throw new Error(
+            "No tienes permisos para subir imágenes. Verifica que estés autenticado."
+          );
+        }
+        if (uploadError.message.includes("already exists")) {
+          // Intentar con upsert si el archivo ya existe
+          const { error: upsertError } = await supabase.storage
+            .from("property-images")
+            .upload(filePath, image, {
+              contentType: image.type,
+              cacheControl: "3600",
+              upsert: true, // Sobrescribir si existe
+            });
+
+          if (upsertError) {
+            throw new Error(
+              `Error subiendo ${image.name}: ${upsertError.message}`
+            );
+          }
+        } else {
+          throw new Error(
+            `Error subiendo ${image.name}: ${uploadError.message}`
+          );
+        }
+      }
+
+      console.log("Upload successful for:", image.name);
 
       const {
         data: { publicUrl },
       } = supabase.storage.from("property-images").getPublicUrl(filePath);
 
+      console.log("Generated public URL:", publicUrl);
+
+      // Debug: verificar formato de URL
+      console.log("URL analysis:", {
+        url: publicUrl,
+        hasProtocol: publicUrl.startsWith("http"),
+        domain: publicUrl.split("/")[2],
+        path: publicUrl.split("/").slice(3).join("/"),
+        isValidUrl: /^https?:\/\/.+/.test(publicUrl),
+      });
+
+      // Verificar que el archivo realmente existe después de subirlo
+      try {
+        const { data: listResult, error: listError } = await supabase.storage
+          .from("property-images")
+          .list(filePath.split('/')[0]); // Listar archivos en el directorio del usuario
+          
+        if (listError) {
+          console.error("Error listing files:", listError);
+        } else {
+          const fileName = filePath.split('/')[1];
+          const fileExists = listResult.some(file => file.name === fileName);
+          console.log("File existence check:", {
+            fileName,
+            exists: fileExists,
+            allFilesInDirectory: listResult.map(f => f.name)
+          });
+        }
+      } catch (existError) {
+        console.error("Error checking file existence:", existError);
+      }
+
       uploadedUrls.push(publicUrl);
     }
 
+    console.log("All uploads completed. URLs:", uploadedUrls);
     return uploadedUrls;
   };
 
@@ -213,16 +391,44 @@ export const EditPropertyPage = () => {
     setSaving(true);
 
     try {
+      console.log("Starting property update with images:", images.length);
+
       // Subir nuevas imágenes
       const newImageUrls = await uploadImages();
+      console.log("New images uploaded:", newImageUrls);
 
       // Eliminar imágenes marcadas para borrar
       if (imagesToDelete.length > 0) {
+        console.log("Deleting images:", imagesToDelete);
         await deleteImages(imagesToDelete);
       }
 
       // Combinar imágenes existentes con las nuevas
       const allImages = [...existingImages, ...newImageUrls];
+
+      // Debug: analizar diferencias entre URLs viejas y nuevas
+      console.log("Image URLs comparison:");
+      console.table(
+        existingImages.map((url, i) => ({
+          index: i,
+          type: 'existing',
+          url,
+          isRelative: !url.startsWith("http"),
+          domain: url.includes("//") ? url.split("/")[2] : "no-domain",
+          path: url.includes("//") ? url.split("/").slice(3).join("/") : url,
+        }))
+      );
+      console.table(
+        newImageUrls.map((url, i) => ({
+          index: i,
+          type: 'new',
+          url,
+          isRelative: !url.startsWith("http"),
+          domain: url.includes("//") ? url.split("/")[2] : "no-domain",
+          path: url.includes("//") ? url.split("/").slice(3).join("/") : url,
+        }))
+      );
+      console.log("Total images after merge:", allImages.length);
 
       // Actualizar propiedad
       const { error } = await supabase
@@ -278,9 +484,21 @@ export const EditPropertyPage = () => {
 
       alert("Propiedad actualizada exitosamente");
       navigate("/my-properties");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating property:", error);
-      alert("Error al actualizar la propiedad");
+
+      // Mostrar mensaje de error más específico
+      let errorMessage = "Error al actualizar la propiedad";
+
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.error?.message) {
+        errorMessage = error.error.message;
+      } else if (typeof error === "string") {
+        errorMessage = error;
+      }
+
+      alert(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -710,6 +928,19 @@ export const EditPropertyPage = () => {
                           src={imageUrl}
                           alt={`Imagen ${index + 1}`}
                           className="w-full h-32 object-cover rounded-lg"
+                          onError={(e) => {
+                            console.error(
+                              `Error loading existing image ${index}:`,
+                              imageUrl
+                            );
+                            console.log("Image element:", e.target);
+                          }}
+                          onLoad={() => {
+                            console.log(
+                              `Successfully loaded existing image ${index}:`,
+                              imageUrl
+                            );
+                          }}
                         />
                         <button
                           type="button"
@@ -717,6 +948,14 @@ export const EditPropertyPage = () => {
                           className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm"
                         >
                           ×
+                        </button>
+                        {/* Botón temporal para probar URL */}
+                        <button
+                          type="button"
+                          onClick={() => window.open(imageUrl, "_blank")}
+                          className="absolute bottom-2 left-2 bg-blue-500 text-white rounded px-2 py-1 text-xs"
+                        >
+                          Test
                         </button>
                       </div>
                     ))}
@@ -848,10 +1087,57 @@ export const EditPropertyPage = () => {
               >
                 {saving ? "Guardando..." : "Actualizar Propiedad"}
               </button>
+              {/* Botón temporal para probar bucket */}
+              <button
+                type="button"
+                onClick={testAndFixBucketPolicies}
+                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
+              >
+                Test Bucket
+              </button>
             </div>
           </form>
         </div>
       </div>
     </div>
   );
+
+  // Test bucket policies function
+  async function testAndFixBucketPolicies() {
+    try {
+      console.log('Testing bucket policies...');
+      
+      // Test public access to an existing file
+      const testImageUrl = 'https://vxmpifukfohjafrbiqvw.supabase.co/storage/v1/object/public/property-images/e1eda88b-4f03-41d3-b311-2a019073d80f/1754677725341-vx7ms3hfd9l.png';
+      
+      const response = await fetch(testImageUrl, { method: 'HEAD' });
+      console.log('Direct fetch test:', {
+        url: testImageUrl,
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+      
+      if (response.status === 403 || response.status === 401) {
+        console.log('Bucket access denied - need to fix policies');
+        
+        // Try to list bucket files to check permissions
+        const { data: files, error: listError } = await supabase.storage
+          .from('property-images')
+          .list('', { limit: 5 });
+          
+        console.log('List files test:', { files, listError });
+        
+        // Try to get bucket info
+        const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+        console.log('Buckets info:', { buckets, bucketsError });
+        
+      } else if (response.ok) {
+        console.log('Bucket access working correctly');
+      }
+      
+    } catch (error) {
+      console.error('Error testing bucket policies:', error);
+    }
+  }
 };
